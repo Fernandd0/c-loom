@@ -1,65 +1,149 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import { Plus, Info } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { useStickyState } from './hooks/useStickyState'
+import TaskCircle from './components/TaskCircle'
+import { Task } from './types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 export default function Home() {
+  const [tasks, setTasks, isLoaded] = useStickyState<Task[]>([], 'loom-tasks')
+
+  const [input, setInput] = useState('')
+
+  const addTask = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!input.trim()) return
+
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      title: input.trim(),
+      createdAt: Date.now(),
+    }
+
+    setTasks((prev) => [...prev, newTask])
+    setInput('')
+  }
+
+  const completeTask = (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  if (!isLoaded) return null
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="relative flex min-h-screen w-full flex-col overflow-hidden bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
+      </div>
+
+      <header className="z-50 mx-auto flex w-full max-w-7xl items-center justify-between p-6 md:p-8">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xl font-bold tracking-tighter text-slate-900">
+            Loom
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 text-slate-500 hover:bg-white/60 hover:text-slate-900 rounded-full transition-colors"
+            >
+              <Info className="h-5 w-5" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>How Loom Works</DialogTitle>
+              <DialogDescription>
+                Tasks grow over time to visualize urgency.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-6 py-4">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full border border-emerald-500/30 bg-emerald-400/20 shadow-sm ring-1 ring-emerald-500/20" />
+                <div className="text-sm">
+                  <span className="block font-semibold text-emerald-700">
+                    Fresh (&lt; 24h)
+                  </span>
+                  Just added. No pressure.
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full border border-amber-500/40 bg-amber-400/30 shadow-md" />
+                <div className="text-sm">
+                  <span className="block font-semibold text-amber-700">
+                    Warning (24h - 48h)
+                  </span>
+                  Getting bigger. Don&apos;t ignore it.
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-full border border-rose-500/50 bg-rose-500/30 shadow-xl" />
+                <div className="text-sm">
+                  <span className="block font-semibold text-rose-700">
+                    Urgent (&gt; 48h)
+                  </span>
+                  Looming large! Pop it now!
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </header>
+
+      <div className="relative z-30 mx-auto flex w-full max-w-7xl flex-1 flex-wrap content-center items-center justify-center gap-12 p-6 pb-40">
+        <AnimatePresence mode="popLayout">
+          {tasks.map((task) => (
+            <TaskCircle key={task.id} task={task} onComplete={completeTask} />
+          ))}
+        </AnimatePresence>
+
+        {tasks.length === 0 && (
+          <div className="mt-20 animate-pulse text-center text-slate-400">
+            <p className="text-lg font-medium">All clear.</p>
+            <p className="text-sm opacity-70">Enjoy the silence.</p>
+          </div>
+        )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 z-40 w-full p-6 md:pb-10">
+        <div className="mx-auto w-full max-w-xl">
+          <form
+            onSubmit={addTask}
+            className="group relative flex items-center rounded-[2rem] border border-white/40 bg-white/70 p-2 shadow-2xl shadow-slate-500/10 backdrop-blur-2xl transition-all duration-300 focus-within:bg-white/90 focus-within:ring-2 focus-within:ring-slate-200/50 hover:bg-white/80"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What's on your mind?"
+              className="h-12 border-none bg-transparent px-6 text-lg font-medium placeholder:text-slate-400 focus-visible:ring-0"
+              autoFocus
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <Button
+              type="submit"
+              size="icon"
+              className="h-12 w-12 shrink-0 rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          </form>
         </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  )
 }
