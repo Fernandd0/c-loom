@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import TypingTitle from './components/TypingTitle'
 
 export default function Home() {
   const [tasks, setTasks, isLoaded] = useStickyState<Task[]>([], 'c-loom-tasks')
@@ -108,9 +109,12 @@ export default function Home() {
 
 
       <div className="fixed top-0 left-0 z-50 flex w-full items-center justify-between p-6">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900/80 backdrop-blur-sm">
-          C-LOOM
-        </h1>
+        <TypingTitle 
+          prefix="C"
+          texts={['', 'IRCLE']}
+          suffix="-LOOM"
+          className="text-xl font-bold tracking-tight text-slate-900/80 backdrop-blur-sm"
+        />
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-black/5">
