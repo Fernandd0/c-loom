@@ -1,39 +1,96 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Info, AlertTriangle, AlertOctagon } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { useStickyState } from './hooks/useStickyState'
+import { useCollisionResolution } from './hooks/useCollisionResolution'
 import TaskCircle from './components/TaskCircle'
-import { Task } from './types'
+import { Task, Category } from './types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { AddTaskDialog } from './components/AddTaskDialog'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
 
 export default function Home() {
-  const [tasks, setTasks, isLoaded] = useStickyState<Task[]>([], 'loom-tasks')
+  const [tasks, setTasks, isLoaded] = useStickyState<Task[]>([], 'c-loom-tasks')
+  const [categories, setCategories] = useStickyState<Category[]>([
+      { id: '1', name: 'Work', color: '#3b82f6' },
+      { id: '2', name: 'Personal', color: '#10b981' },
+      { id: '3', name: 'Urgent', color: '#ef4444' }
+  ], 'c-loom-categories')
 
-  const [input, setInput] = useState('')
 
-  const addTask = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!input.trim()) return
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    
+
+    if (typeof window !== 'undefined') {
+        handleResize()
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useCollisionResolution(tasks, setTasks, {
+    containerWidth: windowSize.width,
+    containerHeight: windowSize.height,
+    padding: 20
+  })
+
+
+  useEffect(() => {
+    if (!isLoaded) return
+
+    let hasChanges = false
+    const migratedTasks = tasks.map((task) => {
+        if (task.x === undefined || task.y === undefined) {
+            hasChanges = true
+            return {
+                ...task,
+                x: Math.random() * 80 + 10,
+                y: Math.random() * 60 + 20
+            }
+        }
+        return task
+    })
+
+    if (hasChanges) {
+      setTasks(migratedTasks)
+    }
+  }, [isLoaded, tasks, setTasks])
+
+
+
+
+  const addTask = (title: string, color?: string, durationMinutes?: number) => {
+    if (!title.trim()) return
+
 
     const newTask: Task = {
       id: crypto.randomUUID(),
-      title: input.trim(),
+      title: title.trim(),
       createdAt: Date.now(),
+
+      x: Math.random() * 80 + 10,
+      y: Math.random() * 60 + 20,
+      color,
+      durationMinutes
     }
 
     setTasks((prev) => [...prev, newTask])
-    setInput('')
+  }
+
+  const addCategory = (category: Category) => {
+      setCategories(prev => [...prev, category])
   }
 
   const completeTask = (id: string) => {
@@ -49,67 +106,69 @@ export default function Home() {
         <div className="absolute bottom-[-10%] right-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
       </div>
 
-      <header className="z-50 mx-auto flex w-full max-w-7xl items-center justify-between p-6 md:p-8">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xl font-bold tracking-tighter text-slate-900">
-            Loom
-          </span>
-        </div>
 
+      <div className="fixed top-0 left-0 z-50 flex w-full items-center justify-between p-6">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900/80 backdrop-blur-sm">
+          C-LOOM
+        </h1>
         <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 text-slate-500 hover:bg-white/60 hover:text-slate-900 rounded-full transition-colors"
-            >
-              <Info className="h-5 w-5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>How Loom Works</DialogTitle>
-              <DialogDescription>
-                Tasks grow over time to visualize urgency.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-6 py-4">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full border border-emerald-500/30 bg-emerald-400/20 shadow-sm ring-1 ring-emerald-500/20" />
-                <div className="text-sm">
-                  <span className="block font-semibold text-emerald-700">
-                    Fresh (&lt; 24h)
-                  </span>
-                  Just added. No pressure.
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full border border-amber-500/40 bg-amber-400/30 shadow-md" />
-                <div className="text-sm">
-                  <span className="block font-semibold text-amber-700">
-                    Warning (24h - 48h)
-                  </span>
-                  Getting bigger. Don&apos;t ignore it.
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-full border border-rose-500/50 bg-rose-500/30 shadow-xl" />
-                <div className="text-sm">
-                  <span className="block font-semibold text-rose-700">
-                    Urgent (&gt; 48h)
-                  </span>
-                  Looming large! Pop it now!
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </header>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-black/5">
+                    <Info className="h-6 w-6 text-slate-600" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md border-0 bg-white/80 backdrop-blur-xl shadow-2xl rounded-[2rem]">
+                <div className="space-y-4 text-center">
+                    <h2 className="text-2xl font-bold tracking-tight">How it works</h2>
+                    <p className="text-slate-600 leading-relaxed">
+                        Create tasks with a deadline. They grow over time.
+                        <br/>
+                        <span className="font-semibold text-slate-800">Complete them before they take over.</span>
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4 py-2">
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                             <div className="flex justify-center mb-2"><AlertTriangle className="h-6 w-6 text-amber-500"/></div>
+                             <p className="text-xs font-medium text-amber-900">Warning after 24h</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100">
+                             <div className="flex justify-center mb-2"><AlertOctagon className="h-6 w-6 text-rose-500"/></div>
+                             <p className="text-xs font-medium text-rose-900">Urgent after 48h</p>
+                        </div>
+                    </div>
 
-      <div className="relative z-30 mx-auto flex w-full max-w-7xl flex-1 flex-wrap content-center items-center justify-center gap-12 p-6 pb-40">
-        <AnimatePresence mode="popLayout">
+                    <div className="pt-4 border-t border-slate-100">
+                        <p className="text-sm text-slate-500 mb-2">
+                            Ideas or questions? Reach out:
+                        </p>
+                        <a 
+                            href="https://fernan-do.dev/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-black text-white text-sm font-medium hover:bg-slate-800 transition-colors shadow-lg hover:shadow-xl"
+                        >
+                            fernan-do.dev
+                        </a>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="relative z-30 mx-auto h-[calc(100vh-200px)] w-full max-w-7xl content-center items-center justify-center p-6">
+        <AnimatePresence>
           {tasks.map((task) => (
-            <TaskCircle key={task.id} task={task} onComplete={completeTask} />
+            <div
+              key={task.id}
+              className="absolute hover:z-50 transition-z duration-200"
+              style={{
+                top: `${task.y}%`,
+                left: `${task.x}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <TaskCircle task={task} onComplete={completeTask} />
+            </div>
           ))}
         </AnimatePresence>
 
@@ -121,27 +180,13 @@ export default function Home() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 z-40 w-full p-6 md:pb-10">
-        <div className="mx-auto w-full max-w-xl">
-          <form
-            onSubmit={addTask}
-            className="group relative flex items-center rounded-[2rem] border border-white/40 bg-white/70 p-2 shadow-2xl shadow-slate-500/10 backdrop-blur-2xl transition-all duration-300 focus-within:bg-white/90 focus-within:ring-2 focus-within:ring-slate-200/50 hover:bg-white/80"
-          >
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What's on your mind?"
-              className="h-12 border-none bg-transparent px-6 text-lg font-medium placeholder:text-slate-400 focus-visible:ring-0"
-              autoFocus
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="h-12 w-12 shrink-0 rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95"
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
-          </form>
+      <div className="fixed bottom-0 left-0 z-40 w-full flex justify-center pointer-events-none">
+        <div className="pointer-events-auto">
+           <AddTaskDialog
+               categories={categories} 
+               onAddTask={addTask} 
+               onAddCategory={addCategory}
+           />
         </div>
       </div>
     </main>

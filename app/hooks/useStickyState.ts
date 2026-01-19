@@ -25,14 +25,14 @@ export function useStickyState<T>(defaultValue: T, key: string) {
 
       window.addEventListener('storage', onStorage)
       window.addEventListener(
-        'loom-storage-update',
+        'c-loom-storage-update',
         onCustomUpdate as EventListener
       )
 
       return () => {
         window.removeEventListener('storage', onStorage)
         window.removeEventListener(
-          'loom-storage-update',
+          'c-loom-storage-update',
           onCustomUpdate as EventListener
         )
       }
@@ -79,7 +79,7 @@ export function useStickyState<T>(defaultValue: T, key: string) {
         window.localStorage.setItem(key, stringified)
 
         window.dispatchEvent(
-          new CustomEvent('loom-storage-update', { detail: { key } })
+          new CustomEvent('c-loom-storage-update', { detail: { key } })
         )
       } catch (e) {
         console.error('Error saving value', e)
