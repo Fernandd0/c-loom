@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 
-
 interface TypingTitleProps {
   texts: string[]
   prefix?: string

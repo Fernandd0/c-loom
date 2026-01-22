@@ -4,7 +4,7 @@ export interface Task {
   createdAt: number
   x: number
   y: number
-  color?: string
+  categoryId: string
   durationMinutes?: number
 }
 
