@@ -13,3 +13,10 @@ export interface Category {
   name: string
   color: string
 }
+
+export interface Board {
+  id: string
+  name: string
+  tasks: Task[]
+  createdAt: number
+}
