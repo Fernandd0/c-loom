@@ -21,12 +21,22 @@
     overflow-x: hidden;
     min-height: 100vh;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-geist-pixel-circle), system-ui, sans-serif;
   }
 
   .dark body {
     background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 100%);
+  }
+
+  /* Safe area support for mobile devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }

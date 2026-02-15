@@ -201,7 +201,7 @@ function SidebarContent({
         </button>
       </div>
 
-      <div className="space-y-0.5 border-t border-slate-200/60 px-3 py-2">
+      <div className="space-y-0.5 border-t border-slate-200/60 px-3 py-2 pb-4 sm:pb-2">
         <InfoDialog
           defaultTab="guide"
           triggerLabel="Guide"

@@ -124,14 +124,16 @@ export function AddTaskDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div className="items-cente flex flex-col">
-          <Button className="h-32 w-64 rounded-t-full rounded-b-none border-t border-white/10 bg-black text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-slate-900 hover:shadow-black/50 active:scale-95">
-            <span className="mb-3 text-[6rem] leading-none font-light">+</span>
+          <Button className="h-24 w-48 rounded-t-full rounded-b-none border-t border-white/10 bg-black text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-slate-900 hover:shadow-black/50 active:scale-95 sm:h-28 sm:w-56 md:h-32 md:w-64">
+            <span className="mb-2 text-[4rem] leading-none font-light sm:mb-3 sm:text-[5rem] md:text-[6rem]">
+              +
+            </span>
           </Button>
         </div>
       </DialogTrigger>
-      <DialogContent className="overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl">
+      <DialogContent className="w-[calc(100vw-2rem)] overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl">
         <form onSubmit={handleSubmit} className="relative w-full">
-          <GlassCard className="flex flex-col gap-5 p-6">
+          <GlassCard className="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6">
             <div className="flex items-center gap-3">
               <Input
                 value={title}

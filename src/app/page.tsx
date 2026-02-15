@@ -231,8 +231,8 @@ export default function Home() {
         hasChanges = true
         return {
           ...task,
-          pos_x: (task as any).x ?? Math.random() * 80 + 10,
-          pos_y: (task as any).y ?? Math.random() * 60 + 20,
+          pos_x: task.pos_x ?? Math.random() * 80 + 10,
+          pos_y: task.pos_y ?? Math.random() * 60 + 20,
           createdAt:
             typeof task.createdAt === 'number'
               ? new Date(task.createdAt).toISOString()
@@ -358,13 +358,7 @@ export default function Home() {
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
 
-        {/* <div className="relative z-30 flex w-full items-center px-6 pt-6">
-          <h1 className="font-[family-name:var(--font-geist-pixel-circle)] text-xl font-normal tracking-wide text-slate-700">
-            C-LOOM
-          </h1>
-        </div> */}
-
-        <div className="relative z-30 mx-auto h-[calc(100vh-100px)] w-full max-w-7xl content-center items-center justify-center p-6">
+        <div className="pb-safe relative z-30 mx-auto h-[calc(100vh-120px)] w-full max-w-7xl content-center items-center justify-center p-3 sm:h-[calc(100vh-100px)] sm:p-6">
           <AnimatePresence mode="popLayout">
             {currentTasks.map((task) => {
               const category = categories.find((c) => c.id === task.categoryId)
@@ -402,17 +396,19 @@ export default function Home() {
           )}
 
           {currentTasks.length === 0 && (
-            <div className="mt-20 animate-pulse text-center text-slate-300">
-              <p className="font-geist-pixel-circle text-9xl font-medium">
+            <div className="mt-10 animate-pulse px-4 text-center text-slate-300 sm:mt-20">
+              <p className="font-geist-pixel-circle text-4xl leading-tight font-medium sm:text-6xl md:text-7xl lg:text-9xl">
                 All clear on {currentBoard?.name}.
               </p>
-              <p className="fonts-mono text-4xl opacity-70">Focus or Relax.</p>
+              <p className="fonts-mono mt-2 text-xl opacity-70 sm:text-2xl md:text-3xl lg:text-4xl">
+                Focus or Relax.
+              </p>
             </div>
           )}
         </div>
 
         {/* Floating Action Button area */}
-        <div className="pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-10">
+        <div className="pb-safe pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-6 sm:pt-10">
           <div className="pointer-events-auto">
             <AddTaskDialog
               categories={categories}
