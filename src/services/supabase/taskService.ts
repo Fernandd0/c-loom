@@ -17,6 +17,8 @@ export const createTask = async (
       deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
       category_id: task.categoryId === 'default' ? null : task.categoryId,
       created_at: task.createdAt,
+      recurrence: task.recurrence || 'never',
+      priority: task.priority ?? 0,
     })
 
     if (error) {
@@ -32,22 +34,38 @@ export const createTask = async (
 
 export const updateTask = async (
   supabase: SupabaseClient,
-  task: Task
+  taskId: string,
+  updates: Partial<Task>
 ) => {
   try {
+    // Build the update object dynamically
+    const updateData: any = {}
+    
+    if (updates.title !== undefined) updateData.title = updates.title
+    if (updates.description !== undefined) updateData.description = updates.description
+    if (updates.pos_x !== undefined) updateData.pos_x = updates.pos_x
+    if (updates.pos_y !== undefined) updateData.pos_y = updates.pos_y
+    if (updates.completed !== undefined) {
+      updateData.completed = updates.completed
+      updateData.completed_at = updates.completed ? new Date().toISOString() : null
+    }
+    if (updates.deadline !== undefined) {
+      updateData.deadline = updates.deadline ? new Date(updates.deadline).toISOString() : null
+    }
+    if (updates.categoryId !== undefined) {
+      updateData.category_id = updates.categoryId === 'default' ? null : updates.categoryId
+    }
+    if (updates.recurrence !== undefined) {
+      updateData.recurrence = updates.recurrence
+    }
+    if (updates.priority !== undefined) {
+      updateData.priority = updates.priority
+    }
+
     const { error } = await supabase
       .from('tasks')
-      .update({
-        title: task.title,
-        description: task.description,
-        pos_x: task.pos_x,
-        pos_y: task.pos_y,
-        completed: task.completed,
-        deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
-        category_id: task.categoryId === 'default' ? null : task.categoryId,
-        completed_at: task.completed ? new Date().toISOString() : null,
-      })
-      .eq('id', task.id)
+      .update(updateData)
+      .eq('id', taskId)
 
     if (error) {
       console.error('Error updating task:', error)

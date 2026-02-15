@@ -1,3 +1,5 @@
+export type TaskRecurrence = 'never' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+
 export interface Task {
   id: string
   title: string
@@ -9,6 +11,8 @@ export interface Task {
   workspaceId: string
   completed: boolean
   deadline?: string
+  recurrence: TaskRecurrence
+  priority?: number // 0 (normal) to 10 (highest priority)
 }
 
 export interface Category {
@@ -16,6 +20,7 @@ export interface Category {
   name: string
   color: string
   workspaceId: string
+  icon?: string
 }
 
 export interface Board {

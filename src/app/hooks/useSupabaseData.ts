@@ -57,6 +57,7 @@ export function useSupabaseData(user: User | null) {
             workspaceId: t.workspace_id,
             completed: t.completed,
             deadline: t.deadline,
+            recurrence: t.recurrence || 'never',
           })),
       }))
 
@@ -135,19 +136,29 @@ export function useSupabaseData(user: User | null) {
     }
   }
 
-  const updateTask = async (task: Task) => {
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
       if (!user || !supabase) return
       
+      // Find the task to get its workspaceId
+      let workspaceId = ''
+      for (const board of boards) {
+        const task = board.tasks.find(t => t.id === taskId)
+        if (task) {
+          workspaceId = task.workspaceId
+          break
+        }
+      }
+
       // Optimistic update
       setBoards((prev) =>
         prev.map((b) =>
-          b.id === task.workspaceId
-            ? { ...b, tasks: b.tasks.map((t) => (t.id === task.id ? task : t)) }
+          b.id === workspaceId
+            ? { ...b, tasks: b.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)) }
             : b
         )
       )
 
-      await taskService.updateTask(supabase, task)
+      await taskService.updateTask(supabase, taskId, updates)
   }
 
   const deleteTask = async (taskId: string, workspaceId: string) => {

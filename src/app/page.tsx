@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useStickyState } from './hooks/useStickyState'
 import { useCollisionResolution } from './hooks/useCollisionResolution'
 import TaskCircle from './components/TaskCircle'
-import { Task, Category, Board } from './types'
+import { Task, Category, Board, TaskRecurrence } from './types'
 import { AddTaskDialog } from './components/AddTaskDialog'
 import { TaskDetailDialog } from './components/TaskDetailDialog'
 import TypingTitle from './components/TypingTitle'
@@ -261,7 +261,7 @@ export default function Home() {
               (old) => old.id === t.id && old.pos_x === undefined
             )
           ) {
-            updateRemoteTask(t)
+            updateRemoteTask(t.id, { pos_x: t.pos_x, pos_y: t.pos_y })
           }
         })
       } else {
@@ -274,26 +274,26 @@ export default function Home() {
   const addTask = async (
     title: string,
     categoryId: string,
-    durationMinutes?: number
+    dueDate?: string,
+    recurrence: TaskRecurrence = 'never',
+    priority?: number,
+    icon?: string
   ) => {
     if (!title.trim() || !currentBoard) return
-
-    const now = Date.now()
-    const deadline = durationMinutes
-      ? new Date(now + durationMinutes * 60 * 1000).toISOString()
-      : undefined
 
     const newTask: Task = {
       id: crypto.randomUUID(),
       title: title.trim(),
-      createdAt: new Date(now).toISOString(),
+      createdAt: new Date().toISOString(),
       pos_x: Math.random() * 80 + 10,
       pos_y: Math.random() * 60 + 20,
       categoryId,
       workspaceId: currentBoardId,
       completed: false,
-      deadline,
-      description: '', // Def
+      deadline: dueDate || undefined,
+      description: '',
+      recurrence,
+      priority: priority ?? 0, // Default to 0 (low)
     }
 
     if (user) {
@@ -319,6 +319,18 @@ export default function Home() {
       await deleteRemoteTask(id, currentBoardId)
     } else {
       setTasks((prev) => prev.filter((t) => t.id !== id))
+    }
+  }
+
+  const updateTask = async (id: string, updates: Partial<Task>) => {
+    // Optimistic update
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    )
+
+    if (user) {
+      // Update in Supabase
+      await updateRemoteTask(id, updates)
     }
   }
 
@@ -389,9 +401,11 @@ export default function Home() {
               category={categories.find(
                 (c) => c.id === selectedTask.categoryId
               )}
+              categories={categories}
               open={!!selectedTask}
               onOpenChange={(open) => !open && setSelectedTask(null)}
               onDelete={completeTask}
+              onUpdate={updateTask}
             />
           )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, AlertOctagon } from 'lucide-react'
+import { AlertOctagon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Task } from '../types'
 
@@ -19,7 +19,7 @@ export default function TaskCircle({
 }: TaskCircleProps) {
   const [clickCount, setClickCount] = useState(0)
 
-  const [status, setStatus] = useState<'chill' | 'warning' | 'urgent'>('chill')
+  const [status, setStatus] = useState<'chill' | 'urgent'>('chill')
   const [size, setSize] = useState(80)
 
   useEffect(() => {
@@ -29,24 +29,29 @@ export default function TaskCircle({
       const diff = now - created
       const hours = diff / (1000 * 60 * 60)
 
-      let newStatus: 'chill' | 'warning' | 'urgent' = 'chill'
-      let newSize = 80
+      let newStatus: 'chill' | 'urgent' = 'chill'
+
+      // Priority affects base size: each level adds 100px (0=80px, 1=180px, 2=280px, 3=380px, etc.)
+      const priorityNum = task.priority ?? 0
+      const baseSize = 80 + priorityNum * 100
+      let newSize = baseSize
 
       if (task.deadline) {
         const deadline = new Date(task.deadline).getTime()
         const hoursLeft = (deadline - now) / (1000 * 60 * 60)
 
+        // Only show danger icon when due date is today (within 24 hours)
         if (hoursLeft < 24) {
           newStatus = 'urgent'
-        } else if (hoursLeft < 48) {
-          newStatus = 'warning'
         } else {
           newStatus = 'chill'
         }
-        newSize = Math.min(400, 80 + hours * 5)
+        // Circle grows over time from base size
+        newSize = Math.min(400, baseSize + hours * 5)
       } else {
-        newStatus = hours > 48 ? 'urgent' : hours > 24 ? 'warning' : 'chill'
-        newSize = Math.min(300, 80 + hours * 5)
+        // Without deadline, circle just grows over time from base size
+        newStatus = 'chill'
+        newSize = Math.min(300, baseSize + hours * 5)
       }
 
       setStatus(newStatus)
@@ -56,7 +61,7 @@ export default function TaskCircle({
     calcTime()
     const interval = setInterval(calcTime, 60000)
     return () => clearInterval(interval)
-  }, [task.createdAt, task.deadline])
+  }, [task.createdAt, task.deadline, task.priority])
 
   useEffect(() => {
     if (clickCount === 0) return
@@ -74,7 +79,6 @@ export default function TaskCircle({
   }, [clickCount, onSelect, onComplete, task])
 
   const isFresh = status === 'chill'
-  const isWarning = status === 'warning'
   const isUrgent = status === 'urgent'
 
   const customStyle = color
@@ -105,7 +109,6 @@ export default function TaskCircle({
         'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 p-4 text-center transition-all duration-300 ease-in-out',
 
         !color && isFresh && 'border-emerald-500 bg-emerald-400 text-white',
-        !color && isWarning && 'border-amber-500 bg-amber-400 text-white',
         !color &&
           isUrgent &&
           'animate-pulse-slow border-rose-500 bg-rose-500 text-white',
@@ -121,9 +124,6 @@ export default function TaskCircle({
       }}
     >
       <div className="relative z-10 flex flex-col items-center gap-1">
-        {isWarning && (
-          <AlertTriangle className="h-6 w-6 animate-bounce text-white drop-shadow-sm" />
-        )}
         {isUrgent && (
           <AlertOctagon className="h-8 w-8 animate-pulse text-white drop-shadow-sm" />
         )}
