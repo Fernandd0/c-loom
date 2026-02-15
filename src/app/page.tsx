@@ -303,13 +303,25 @@ export default function Home() {
     }
   }
 
-  const addCategory = async (category: Omit<Category, 'workspaceId'>) => {
+  const addCategory = async (name: string, color: string, icon?: string) => {
+    if (!currentBoard) return
+
+    const newCategory: Omit<Category, 'workspaceId'> = {
+      id: crypto.randomUUID(),
+      name,
+      color,
+      icon,
+    }
+
     if (user) {
-      await createRemoteCategory({ ...category, workspaceId: currentBoardId })
+      await createRemoteCategory({
+        ...newCategory,
+        workspaceId: currentBoardId,
+      })
     } else {
       setLocalCategories((prev) => [
         ...prev,
-        { ...category, workspaceId: currentBoardId },
+        { ...newCategory, workspaceId: currentBoardId },
       ])
     }
   }
