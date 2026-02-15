@@ -26,11 +26,10 @@ export function TaskDetailDialog({
 
   React.useEffect(() => {
     if (task) {
-      const diff = Date.now() - task.createdAt
+      const diff = Date.now() - new Date(task.createdAt).getTime()
       setHoursOld((diff / (1000 * 60 * 60)).toFixed(1))
     }
   }, [task, open])
-
   if (!task) return null
 
   return (
@@ -76,15 +75,13 @@ export function TaskDetailDialog({
                 </span>
               </div>
 
-              {task.durationMinutes && (
+              {task.deadline && (
                 <div className="flex items-center gap-3">
                   <span className="w-20 text-sm font-medium text-slate-500">
-                    Duration
+                    Deadline
                   </span>
                   <span className="text-sm text-slate-700">
-                    {task.durationMinutes < 60
-                      ? `${task.durationMinutes} min`
-                      : `${(task.durationMinutes / 60).toFixed(1)} hours`}
+                    {new Date(task.deadline).toLocaleString()}
                   </span>
                 </div>
               )}

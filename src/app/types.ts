@@ -1,22 +1,35 @@
 export interface Task {
   id: string
   title: string
-  createdAt: number
-  x: number
-  y: number
+  description?: string
+  createdAt: string // ISO string from DB
+  pos_x: number // DB column
+  pos_y: number // DB column
   categoryId: string
-  durationMinutes?: number
+  workspaceId: string
+  completed: boolean
+  deadline?: string
 }
 
 export interface Category {
   id: string
   name: string
   color: string
+  workspaceId: string
 }
 
 export interface Board {
   id: string
   name: string
   tasks: Task[]
-  createdAt: number
+  createdAt: string
+  userId: string
 }
+
+export interface Profile {
+  id: string
+  email: string
+  fullName?: string
+  avatarUrl?: string
+}
+

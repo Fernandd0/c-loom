@@ -1,17 +1,22 @@
 'use client'
 
 import * as React from 'react'
-import { Info, AlertTriangle, AlertOctagon, ArrowUpRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { AlertTriangle, AlertOctagon } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { GlassCard } from './GlassCard'
 import { Kbd } from './Kbd'
 
-export function InfoDialog() {
-  const [activeTab, setActiveTab] = React.useState<
-    'guide' | 'hotkeys' | 'contact'
-  >('guide')
+interface InfoDialogProps {
+  defaultTab: 'guide' | 'hotkeys' | 'contact'
+  triggerLabel: string
+  triggerIcon?: React.ReactNode
+}
+
+export function InfoDialog({
+  defaultTab,
+  triggerLabel,
+  triggerIcon,
+}: InfoDialogProps) {
   const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
@@ -29,37 +34,15 @@ export function InfoDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full hover:bg-black/5"
-        >
-          <Info className="h-6 w-6 text-slate-600" />
-        </Button>
+        <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700">
+          {triggerIcon}
+          <span>{triggerLabel}</span>
+        </button>
       </DialogTrigger>
       <DialogContent className="border-0 bg-transparent p-0 shadow-none sm:max-w-md">
         <GlassCard className="p-6">
-          <div className="mb-6 flex justify-center">
-            <div className="inline-flex rounded-full bg-slate-100/50 p-1">
-              {(['guide', 'hotkeys', 'contact'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={cn(
-                    'rounded-full px-4 py-1.5 text-xs font-semibold transition-all',
-                    activeTab === tab
-                      ? 'bg-white text-black shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  )}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="min-h-[300px]">
-            {activeTab === 'guide' && (
+            {defaultTab === 'guide' && (
               <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 text-center duration-300">
                 <h2 className="text-2xl font-bold tracking-tight">
                   How it works
@@ -93,7 +76,7 @@ export function InfoDialog() {
               </div>
             )}
 
-            {activeTab === 'hotkeys' && (
+            {defaultTab === 'hotkeys' && (
               <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
                 <h2 className="text-center text-2xl font-bold tracking-tight">
                   Hot Keys
@@ -131,7 +114,7 @@ export function InfoDialog() {
               </div>
             )}
 
-            {activeTab === 'contact' && (
+            {defaultTab === 'contact' && (
               <div className="animate-in fade-in slide-in-from-bottom-2 flex flex-col items-center justify-center space-y-6 pt-4 text-center duration-300">
                 <div className="space-y-1">
                   <h2 className="text-2xl font-bold tracking-tight">
@@ -141,27 +124,6 @@ export function InfoDialog() {
                     Designed effectively for you.
                   </p>
                 </div>
-
-                {/* <div className="w-full max-w-[240px] rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-colors hover:bg-slate-50">
-                  <div className="mb-3 flex items-center justify-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-white shadow-lg">
-                      <span className="text-lg font-bold">F</span>
-                    </div>
-                  </div>
-                  <div className="mb-4 space-y-0.5">
-                    <p className="font-semibold text-slate-900">Fernando</p>
-                    <p className="text-xs text-slate-500">Creator</p>
-                  </div>
-                  <a
-                    href="https://fernan-do.dev/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 hover:ring-slate-300 active:scale-95"
-                  >
-                    Visit Website
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </a>
-                </div> */}
 
                 <div className="space-y-2 pt-2">
                   <p className="text-xs text-slate-400">

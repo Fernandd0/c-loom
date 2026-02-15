@@ -17,21 +17,46 @@ export default function TaskCircle({
   onComplete,
   onSelect,
 }: TaskCircleProps) {
-  const [hoursOld, setHoursOld] = useState(0)
   const [clickCount, setClickCount] = useState(0)
+
+  const [status, setStatus] = useState<'chill' | 'warning' | 'urgent'>('chill')
+  const [size, setSize] = useState(80)
 
   useEffect(() => {
     const calcTime = () => {
       const now = Date.now()
-      const diff = now - task.createdAt
+      const created = new Date(task.createdAt).getTime()
+      const diff = now - created
       const hours = diff / (1000 * 60 * 60)
-      setHoursOld(hours)
+
+      let newStatus: 'chill' | 'warning' | 'urgent' = 'chill'
+      let newSize = 80
+
+      if (task.deadline) {
+        const deadline = new Date(task.deadline).getTime()
+        const hoursLeft = (deadline - now) / (1000 * 60 * 60)
+
+        if (hoursLeft < 24) {
+          newStatus = 'urgent'
+        } else if (hoursLeft < 48) {
+          newStatus = 'warning'
+        } else {
+          newStatus = 'chill'
+        }
+        newSize = Math.min(400, 80 + hours * 5)
+      } else {
+        newStatus = hours > 48 ? 'urgent' : hours > 24 ? 'warning' : 'chill'
+        newSize = Math.min(300, 80 + hours * 5)
+      }
+
+      setStatus(newStatus)
+      setSize(newSize)
     }
 
     calcTime()
     const interval = setInterval(calcTime, 60000)
     return () => clearInterval(interval)
-  }, [task.createdAt])
+  }, [task.createdAt, task.deadline])
 
   useEffect(() => {
     if (clickCount === 0) return
@@ -47,28 +72,6 @@ export default function TaskCircle({
 
     return () => clearTimeout(timer)
   }, [clickCount, onSelect, onComplete, task])
-
-  let size = 80
-  let status: 'chill' | 'warning' | 'urgent' = 'chill'
-
-  if (task.durationMinutes) {
-    const durationHours = task.durationMinutes / 60
-
-    const intervalsPassed = Math.floor(hoursOld / durationHours)
-
-    if (hoursOld > 48) {
-      status = 'urgent'
-    } else if (hoursOld > 24) {
-      status = 'warning'
-    } else {
-      status = 'chill'
-    }
-
-    size = Math.min(400, 80 + intervalsPassed * 20)
-  } else {
-    size = Math.min(300, 80 + hoursOld * 5)
-    status = hoursOld > 48 ? 'urgent' : hoursOld > 24 ? 'warning' : 'chill'
-  }
 
   const isFresh = status === 'chill'
   const isWarning = status === 'warning'

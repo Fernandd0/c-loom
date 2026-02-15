@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-geist-pixel-circle: var(--font-geist-pixel-circle);
 }
 
 @layer base {
@@ -20,6 +21,11 @@
     overflow-x: hidden;
     min-height: 100vh;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-geist-pixel-circle), system-ui, sans-serif;
+  }
+
   .dark body {
     background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 100%);
   }

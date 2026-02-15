@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Plus, Clock, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,13 +17,14 @@ import { GlassCard } from './GlassCard'
 
 interface AddTaskDialogProps {
   categories: Category[]
+  currentBoard?: { id: string; name: string } | null
   onDisconnect?: () => void
   onAddTask: (
     title: string,
     categoryId: string,
     durationMinutes?: number
   ) => void
-  onAddCategory: (category: Category) => void
+  onAddCategory: (category: Omit<Category, 'workspaceId'>) => void
 }
 
 const VIBRANT_COLORS = [
@@ -40,6 +42,7 @@ const VIBRANT_COLORS = [
 
 export function AddTaskDialog({
   categories,
+  currentBoard,
   onAddTask,
   onAddCategory,
 }: AddTaskDialogProps) {
@@ -94,7 +97,7 @@ export function AddTaskDialog({
 
   const handleCreateCategory = () => {
     if (!newCatName.trim()) return
-    const newCat: Category = {
+    const newCat: Omit<Category, 'workspaceId'> = {
       id: crypto.randomUUID(),
       name: newCatName.trim(),
       color: newCatColor,
@@ -120,23 +123,26 @@ export function AddTaskDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-32 w-64 rounded-t-full rounded-b-none border-t border-white/10 bg-black text-white shadow-2xl transition-all hover:scale-105 hover:bg-slate-900 hover:shadow-black/50 active:scale-95">
-          <span className="mb-3 text-[6rem] leading-none font-light">+</span>
-        </Button>
+        <div className="items-cente flex flex-col">
+          <Button className="h-32 w-64 rounded-t-full rounded-b-none border-t border-white/10 bg-black text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-slate-900 hover:shadow-black/50 active:scale-95">
+            <span className="mb-3 text-[6rem] leading-none font-light">+</span>
+          </Button>
+        </div>
       </DialogTrigger>
       <DialogContent className="overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl">
         <form onSubmit={handleSubmit} className="relative w-full">
-          <GlassCard className="flex flex-col gap-4 p-6">
+          <GlassCard className="flex flex-col gap-5 p-6">
             <div className="flex items-center gap-3">
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="New Task..."
-                className="placeholder:text-gray h-auto min-w-0 flex-1 border-none bg-transparent px-0 text-2xl font-semibold focus-visible:ring-0"
+                placeholder="What needs doing?"
+                className="h-auto min-w-0 flex-1 border-none bg-transparent px-0 text-xl font-medium placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0"
                 autoFocus
               />
 
               <Popover>
+                {/* ... existing popover trigger ... */}
                 <PopoverTrigger asChild>
                   <button
                     type="button"
@@ -144,7 +150,7 @@ export function AddTaskDialog({
                       'flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all',
                       selectedCategory
                         ? 'pr-4 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        : 'bg-slate-100/50 text-slate-500 hover:bg-slate-100'
                     )}
                     style={{
                       backgroundColor: selectedCategory?.color,
@@ -177,10 +183,10 @@ export function AddTaskDialog({
                             setSelectedCategoryId(c.id)
                           }}
                           className={cn(
-                            'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+                            'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200',
                             selectedCategoryId === c.id
-                              ? 'border-transparent text-white shadow'
-                              : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                              ? 'scale-105 border-transparent text-white shadow-md'
+                              : 'border-slate-100 bg-slate-50 text-slate-600 hover:scale-105 hover:border-slate-200'
                           )}
                           style={{
                             backgroundColor:
@@ -195,9 +201,10 @@ export function AddTaskDialog({
                         onClick={() =>
                           setIsCreatingCategory(!isCreatingCategory)
                         }
-                        className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-200"
+                        className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-all duration-200 hover:scale-105 hover:bg-slate-200"
                       >
-                        <Plus className="h-3 w-3" /> New
+                        <Plus size={12} />
+                        New
                       </button>
                     </div>
 
@@ -241,7 +248,7 @@ export function AddTaskDialog({
               </Popover>
             </div>
 
-            <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+            <div className="flex items-center justify-between border-t border-slate-100/50 pt-3">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -249,12 +256,14 @@ export function AddTaskDialog({
                   className={cn(
                     'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
                     showDurationInput || durationVal
-                      ? 'bg-slate-100 text-slate-900'
+                      ? 'bg-indigo-50 text-indigo-600'
                       : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
                   )}
                 >
                   <Clock className="h-4 w-4" />
-                  {durationVal ? `${durationVal} ${durationUnit}s` : 'Duration'}
+                  {durationVal
+                    ? `${durationVal} ${durationUnit}s`
+                    : 'Duration?'}
                 </button>
 
                 {showDurationInput && (
@@ -264,7 +273,7 @@ export function AddTaskDialog({
                       value={durationVal}
                       onChange={(e) => setDurationVal(e.target.value)}
                       placeholder="0"
-                      className="h-8 w-16 border-transparent bg-slate-50 text-center text-sm focus:bg-white"
+                      className="h-8 w-16 border-transparent bg-slate-50 text-center text-sm focus:bg-white focus:ring-1 focus:ring-indigo-100"
                       autoFocus
                     />
                     <div className="flex rounded-md bg-slate-100 p-0.5">
@@ -276,7 +285,7 @@ export function AddTaskDialog({
                           className={cn(
                             'rounded px-2 py-0.5 text-xs font-medium transition-colors',
                             durationUnit === unit
-                              ? 'bg-white text-black shadow'
+                              ? 'bg-white text-black shadow-sm'
                               : 'text-slate-500 hover:text-black'
                           )}
                         >
@@ -290,8 +299,8 @@ export function AddTaskDialog({
 
               <Button
                 type="submit"
-                disabled={!title.trim() || !selectedCategoryId || !durationVal}
-                className="rounded-full bg-black px-6 text-white hover:bg-slate-800"
+                disabled={!title.trim() || !selectedCategoryId}
+                className="h-9 rounded-full bg-black px-6 text-sm font-medium text-white shadow-lg shadow-black/10 transition-all hover:scale-105 hover:bg-slate-800 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
               >
                 Create
               </Button>
