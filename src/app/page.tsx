@@ -359,7 +359,7 @@ export default function Home() {
         </div>
 
         {/* <div className="relative z-30 flex w-full items-center px-6 pt-6">
-          <h1 className="font-mono text-xl font-normal tracking-wide text-slate-700">
+          <h1 className="font-[family-name:var(--font-geist-pixel-circle)] text-xl font-normal tracking-wide text-slate-700">
             C-LOOM
           </h1>
         </div> */}

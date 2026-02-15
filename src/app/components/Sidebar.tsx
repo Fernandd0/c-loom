@@ -10,12 +10,58 @@ import {
   Keyboard,
   Mail,
   Menu,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Board } from '../types'
 import { LoginButton } from '@/components/LoginButton'
 import { InfoDialog } from './InfoDialog'
+import { createClient } from '@/lib/supabase/client'
+
+function UserProfile({ user }: { user: any }) {
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    if (!supabase) return
+    await supabase.auth.signOut()
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2">
+      <div className="mb-2 flex items-center gap-2">
+        {user.user_metadata?.avatar_url ? (
+          <img
+            src={user.user_metadata.avatar_url}
+            alt="Profile"
+            className="h-9 w-9 rounded-full border-2 border-slate-200 shadow-sm"
+          />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-sm font-medium text-slate-600">
+            {(user.user_metadata?.full_name ||
+              user.email ||
+              'U')[0].toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-slate-700">
+            {user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0]}
+          </p>
+          <p className="truncate text-xs text-slate-500">{user.email}</p>
+        </div>
+      </div>
+      <button
+        onClick={handleLogout}
+        className="flex w-full items-center justify-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-900/5 transition-all hover:text-red-600 hover:ring-red-100"
+      >
+        <LogOut size={12} />
+        Sign out
+      </button>
+    </div>
+  )
+}
 
 interface SidebarProps {
   boards: Board[]
@@ -160,11 +206,13 @@ function SidebarContent({
           defaultTab="guide"
           triggerLabel="Guide"
           triggerIcon={<HelpCircle size={14} />}
+          hotkey="g"
         />
         <InfoDialog
           defaultTab="hotkeys"
           triggerLabel="Hotkeys"
           triggerIcon={<Keyboard size={14} />}
+          hotkey="k"
         />
         <InfoDialog
           defaultTab="contact"
@@ -174,33 +222,7 @@ function SidebarContent({
 
         <div className="my-2 h-px bg-slate-200/60" />
 
-        {user ? (
-          <div className="flex items-center gap-2 rounded-md px-2 py-2">
-            {user.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt="Profile"
-                className="h-8 w-8 rounded-full border-2 border-slate-200 shadow-sm"
-              />
-            ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-xs font-medium text-slate-600">
-                {(user.user_metadata?.full_name ||
-                  user.email ||
-                  'U')[0].toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-700">
-                {user.user_metadata?.full_name ||
-                  user.user_metadata?.name ||
-                  user.email?.split('@')[0]}
-              </p>
-              <p className="truncate text-xs text-slate-500">{user.email}</p>
-            </div>
-          </div>
-        ) : (
-          <LoginButton />
-        )}
+        {user ? <UserProfile user={user} /> : <LoginButton />}
       </div>
     </div>
   )

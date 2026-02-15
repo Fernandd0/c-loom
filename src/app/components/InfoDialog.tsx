@@ -10,18 +10,22 @@ interface InfoDialogProps {
   defaultTab: 'guide' | 'hotkeys' | 'contact'
   triggerLabel: string
   triggerIcon?: React.ReactNode
+  hotkey?: string
 }
 
 export function InfoDialog({
   defaultTab,
   triggerLabel,
   triggerIcon,
+  hotkey,
 }: InfoDialogProps) {
   const [open, setOpen] = React.useState(false)
 
   React.useEffect(() => {
+    if (!hotkey) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key === 'i') {
+      if (e.metaKey && e.key.toLowerCase() === hotkey.toLowerCase()) {
         e.preventDefault()
         setOpen(true)
       }
@@ -29,7 +33,7 @@ export function InfoDialog({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [hotkey])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -94,12 +98,22 @@ export function InfoDialog({
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-white/50 bg-white/50 p-3">
                     <span className="text-sm font-medium text-slate-600">
-                      Open Info
+                      Open Guide
                     </span>
                     <div className="flex items-center gap-1">
                       <Kbd>⌘</Kbd>
                       <span className="text-xs text-slate-400">+</span>
-                      <Kbd>I</Kbd>
+                      <Kbd>G</Kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/50 bg-white/50 p-3">
+                    <span className="text-sm font-medium text-slate-600">
+                      Open Hotkeys
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Kbd>⌘</Kbd>
+                      <span className="text-xs text-slate-400">+</span>
+                      <Kbd>K</Kbd>
                     </div>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-white/50 bg-white/50 p-3">
