@@ -28,35 +28,35 @@ function UserProfile({ user }: { user: any }) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2">
+    <div className="rounded-2xl border-0 bg-[#F2F2F7] p-3">
       <div className="mb-2 flex items-center gap-2">
         {user.user_metadata?.avatar_url ? (
           <img
             src={user.user_metadata.avatar_url}
             alt="Profile"
-            className="h-9 w-9 rounded-full border-2 border-slate-200 shadow-sm"
+            className="h-10 w-10 rounded-full border-0 shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-100 text-sm font-medium text-slate-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border-0 bg-white text-[15px] font-semibold text-[#3C3C43] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {(user.user_metadata?.full_name ||
               user.email ||
               'U')[0].toUpperCase()}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-slate-700">
+          <p className="truncate text-[15px] font-semibold text-[#000000]">
             {user.user_metadata?.full_name ||
               user.user_metadata?.name ||
               user.email?.split('@')[0]}
           </p>
-          <p className="truncate text-xs text-slate-500">{user.email}</p>
+          <p className="truncate text-[13px] text-[#8E8E93]">{user.email}</p>
         </div>
       </div>
       <button
         onClick={handleLogout}
-        className="flex w-full items-center justify-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-900/5 transition-all hover:text-red-600 hover:ring-red-100"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-[13px] font-semibold text-[#8E8E93] shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all hover:text-[#FF3B30] hover:shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
       >
-        <LogOut size={12} />
+        <LogOut size={14} />
         Sign out
       </button>
     </div>
@@ -152,15 +152,15 @@ function SidebarContent({
                     if (!isExpanded) setIsHovering(false)
                   }}
                   className={cn(
-                    'flex flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm font-medium transition-all',
+                    'flex flex-1 items-center justify-between rounded-xl px-3 py-2 text-[15px] font-semibold transition-all',
                     currentBoardId === board.id
-                      ? 'bg-slate-100 text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-[#E5E5EA] text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
+                      : 'text-[#1C1C1E] hover:bg-[#F2F2F7]'
                   )}
                 >
                   <span className="truncate">{board.name}</span>
                   {currentBoardId === board.id && (
-                    <Check size={12} className="ml-2 text-slate-500" />
+                    <Check size={14} className="ml-2" />
                   )}
                 </button>
               )}
@@ -194,9 +194,9 @@ function SidebarContent({
 
         <button
           onClick={onAddBoard}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          className="flex w-full items-center gap-2 rounded-xl bg-[#E5E5EA] px-3 py-2 text-[15px] font-semibold text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:bg-[#D1D1D6]"
         >
-          <Plus size={14} />
+          <Plus size={16} />
           <span>New Workspace</span>
         </button>
       </div>

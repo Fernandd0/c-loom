@@ -144,8 +144,8 @@ export function AddTaskDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className="items-cente flex flex-col">
-          <Button className="h-24 w-48 rounded-t-full rounded-b-none border-t border-white/10 bg-black text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:bg-slate-900 hover:shadow-black/50 active:scale-95 sm:h-28 sm:w-56 md:h-32 md:w-64">
+        <div className="flex flex-col items-center">
+          <Button className="h-24 w-48 rounded-t-full rounded-b-none border-t border-white/10 bg-[#1C1C1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15),0_12px_28px_rgba(0,0,0,0.2)] transition-all duration-200 hover:bg-[#2C2C2E] hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_16px_36px_rgba(0,0,0,0.25)] active:scale-[0.98] sm:h-28 sm:w-56 md:h-32 md:w-64">
             <span className="mb-2 text-[4rem] leading-none font-light sm:mb-3 sm:text-[5rem] md:text-[6rem]">
               +
             </span>
@@ -174,10 +174,10 @@ export function AddTaskDialog({
                   <button
                     type="button"
                     className={cn(
-                      'flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all',
+                      'flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-all',
                       selectedCategory
-                        ? 'pr-4 text-white shadow-sm'
-                        : 'bg-slate-100/50 text-slate-500 hover:bg-slate-100'
+                        ? 'text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_8px_rgba(0,0,0,0.15)]'
+                        : 'bg-[#F2F2F7] text-[#8E8E93] hover:bg-[#E5E5EA]'
                     )}
                     style={{
                       backgroundColor: selectedCategory?.color,
@@ -186,18 +186,18 @@ export function AddTaskDialog({
                     <span
                       className={cn(
                         'h-2 w-2 rounded-full',
-                        !selectedCategory && 'bg-slate-400'
+                        !selectedCategory && 'bg-[#8E8E93]'
                       )}
                       style={{
                         backgroundColor: selectedCategory ? 'white' : undefined,
                       }}
                     />
                     {selectedCategory ? selectedCategory.name : 'Type'}
-                    <ChevronDown className="h-3 w-3 opacity-50" />
+                    <ChevronDown className="h-3 w-3 opacity-70" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-64 rounded-2xl border-slate-200/50 bg-white/95 p-3 shadow-xl backdrop-blur-xl"
+                  className="w-64 rounded-2xl border-0 bg-white p-3 shadow-[0_4px_12px_rgba(0,0,0,0.12),0_16px_32px_rgba(0,0,0,0.18)]"
                   align="end"
                 >
                   <div className="space-y-3">
@@ -210,10 +210,10 @@ export function AddTaskDialog({
                             setSelectedCategoryId(c.id)
                           }}
                           className={cn(
-                            'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200',
+                            'rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200',
                             selectedCategoryId === c.id
-                              ? 'scale-105 border-transparent text-white shadow-md'
-                              : 'border-slate-100 bg-slate-50 text-slate-600 hover:scale-105 hover:border-slate-200'
+                              ? 'scale-105 border-0 text-white shadow-[0_1px_3px_rgba(0,0,0,0.12),0_4px_8px_rgba(0,0,0,0.15)]'
+                              : 'border-0 bg-[#F2F2F7] text-[#000000] hover:scale-105 hover:bg-[#E5E5EA]'
                           )}
                           style={{
                             backgroundColor:
@@ -228,20 +228,20 @@ export function AddTaskDialog({
                         onClick={() =>
                           setIsCreatingCategory(!isCreatingCategory)
                         }
-                        className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 transition-all duration-200 hover:scale-105 hover:bg-slate-200"
+                        className="flex items-center gap-1.5 rounded-full bg-[#E5E5EA] px-4 py-2 text-[13px] font-semibold text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:scale-105 hover:bg-[#D1D1D6]"
                       >
-                        <Plus size={12} />
+                        <Plus size={14} />
                         New
                       </button>
                     </div>
 
                     {isCreatingCategory && (
-                      <div className="animate-in fade-in zoom-in-95 space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-3 duration-200">
+                      <div className="animate-in fade-in zoom-in-95 space-y-3 rounded-2xl border-0 bg-[#F2F2F7] p-4 duration-200">
                         <Input
                           value={newCatName}
                           onChange={(e) => setNewCatName(e.target.value)}
                           placeholder="Type name..."
-                          className="h-8 bg-white text-sm"
+                          className="h-9 bg-white text-[13px]"
                         />
                         <div className="flex flex-wrap gap-1.5">
                           {VIBRANT_COLORS.map((c) => (
@@ -285,7 +285,7 @@ export function AddTaskDialog({
                           type="button"
                           onClick={handleCreateCategory}
                           size="sm"
-                          className="h-8 w-full bg-black text-xs text-white hover:bg-slate-800"
+                          className="w-full"
                         >
                           Create Type
                         </Button>
@@ -297,8 +297,8 @@ export function AddTaskDialog({
             </div>
 
             {/* Priority Slider */}
-            <div className="space-y-3 border-t border-slate-100/50 pt-4">
-              <label className="block text-sm font-semibold text-slate-700">
+            <div className="space-y-3 border-t border-[#E5E5EA] pt-4">
+              <label className="block text-[15px] font-semibold text-[#000000]">
                 Priority
               </label>
               <div className="space-y-2">
@@ -309,73 +309,70 @@ export function AddTaskDialog({
                   step="1"
                   value={priority}
                   onChange={(e) => setPriority(parseInt(e.target.value))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 transition-all outline-none [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-slate-700 [&::-moz-range-thumb]:shadow-md [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-slate-700 [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-110"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#E5E5EA] transition-all outline-none [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_1px_3px_rgba(0,0,0,0.1)] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_1px_3px_rgba(0,0,0,0.1)] [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-110"
                   style={{
-                    background: `linear-gradient(to right, #cbd5e1 0%, #94a3b8 50%, #475569 100%)`,
+                    background: `linear-gradient(to right, #C7C7CC 0%, #C7C7CC ${priority * 10}%, #E5E5EA ${priority * 10}%, #E5E5EA 100%)`,
                   }}
                 />
-                <div className="flex justify-between text-xs font-medium text-slate-500">
+                <div className="flex justify-between text-[13px] font-medium text-[#8E8E93]">
                   <span
                     className={cn(
-                      priority <= 2 && 'font-semibold text-slate-700'
+                      priority <= 2 && 'font-semibold text-[#3C3C43]'
                     )}
                   >
-                    0 (Low)
+                    Low
                   </span>
                   <span
                     className={cn(
                       priority >= 3 &&
                         priority <= 7 &&
-                        'font-semibold text-slate-700'
+                        'font-semibold text-[#3C3C43]'
                     )}
                   >
-                    5 (Medium)
+                    Medium
                   </span>
                   <span
                     className={cn(
-                      priority >= 8 && 'font-semibold text-slate-700'
+                      priority >= 8 && 'font-semibold text-[#3C3C43]'
                     )}
                   >
-                    10 (High)
+                    High
                   </span>
-                </div>
-                <div className="text-center text-xs font-semibold text-slate-600">
-                  Current: {priority}
                 </div>
               </div>
             </div>
 
             {/* Due Date & Recurrence */}
-            <div className="grid grid-cols-2 gap-3 border-t border-slate-100/50 pt-4">
+            <div className="grid grid-cols-2 gap-3 border-t border-[#E5E5EA] pt-4">
               {/* Due Date */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-[13px] font-semibold text-[#000000]">
                   Due Date
                 </label>
                 <div className="relative">
-                  <Calendar className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Calendar className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#8E8E93]" />
                   <Input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm transition-all focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                    className="pl-10 text-[13px]"
                   />
                 </div>
               </div>
 
               {/* Recurrence */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-[13px] font-semibold text-[#000000]">
                   Recurrence
                 </label>
                 <div className="relative">
-                  <Repeat className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Repeat className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#8E8E93]" />
                   <select
                     value={recurrence}
                     onChange={(e) =>
                       setRecurrence(e.target.value as TaskRecurrence)
                     }
-                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pr-10 pl-10 text-sm transition-all focus:border-slate-400 focus:ring-2 focus:ring-slate-100 focus:outline-none"
+                    className="h-11 w-full appearance-none rounded-xl border border-[#D1D1D6] bg-white pr-10 pl-10 text-[13px] leading-tight text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all focus:border-[#C7C7CC] focus:ring-4 focus:ring-[#D1D1D6]/30 focus:outline-none"
                   >
                     <option value="never">Never</option>
                     <option value="daily">Daily</option>
@@ -383,17 +380,17 @@ export function AddTaskDialog({
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
                   </select>
-                  <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[#8E8E93]" />
                 </div>
               </div>
             </div>
 
             {/* Create Button */}
-            <div className="border-t border-slate-100/50 pt-4">
+            <div className="border-t border-[#E5E5EA] pt-4">
               <Button
                 type="submit"
                 disabled={!title.trim() || !selectedCategoryId}
-                className="h-11 w-full rounded-xl bg-slate-900 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 disabled:hover:bg-slate-900"
+                className="w-full disabled:opacity-50"
               >
                 Create Task
               </Button>

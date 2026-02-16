@@ -91,17 +91,15 @@ export default function Home() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // 5. Initialize / Default Board Logic
   useEffect(() => {
     if (!isLoaded) return
 
     if (boards.length === 0) {
       if (!user) {
-        // Only create default local board if guest
         const initialBoardId = crypto.randomUUID()
         const initialBoard: Board = {
           id: initialBoardId,
-          name: 'Home',
+          name: 'Life',
           tasks: legacyTasks.length > 0 ? legacyTasks : [],
           createdAt: new Date().toISOString(),
           userId: 'local',
@@ -127,7 +125,6 @@ export default function Home() {
     legacyTasks,
   ])
 
-  // 6. Sync Profile (Once per user)
   const syncedUserIdRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -137,14 +134,11 @@ export default function Home() {
     }
   }, [user?.id, syncProfile])
 
-  // 7. Migrate Data on Login
   useEffect(() => {
     const performMigration = async () => {
-      // Check if user is logged in and there are local boards to migrate
       if (user && localBoards.length > 0) {
         try {
           await migrateLocalData(localBoards, localCategories)
-          // Clear local data after successful migration
           setLocalBoards([])
           setLocalCategories([])
           console.log('Local data migrated and cleared.')
@@ -166,7 +160,6 @@ export default function Home() {
     setLocalCategories,
   ])
 
-  // 8. Computed Current State
   const currentBoard = useMemo(
     () => boards.find((b) => b.id === currentBoardId) || boards[0],
     [boards, currentBoardId]
@@ -174,7 +167,6 @@ export default function Home() {
 
   const currentTasks = useMemo(() => currentBoard?.tasks || [], [currentBoard])
 
-  // Helper to update current board's tasks (Abstracts local vs remote)
   const setTasks = (newTasksUpdater: Task[] | ((prev: Task[]) => Task[])) => {
     if (!currentBoard) return
 
@@ -200,7 +192,6 @@ export default function Home() {
     }
   }
 
-  // Window Resize
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight })
@@ -214,14 +205,12 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Collision Resolution
   useCollisionResolution(currentTasks, setTasks, {
     containerWidth: windowSize.width,
     containerHeight: windowSize.height,
     padding: 20,
   })
 
-  // Ensure tasks have positions (Migration/Safety)
   useEffect(() => {
     if (!isLoaded || !currentBoard) return
 
@@ -245,12 +234,6 @@ export default function Home() {
     })
 
     if (hasChanges) {
-      // Update local state or trigger remote update?
-      // Since setTasks handles both via setBoards, this updates the state.
-      // But for remote, we might want to save these positions permanently?
-      // The updateRemoteTask in useSupabaseData would persist it.
-      // But setTasks only updates local state (optimistic).
-      // If we want to persist migration:
       if (user) {
         setTasks(migratedTasks)
         // iterate and update remote?
@@ -268,9 +251,8 @@ export default function Home() {
         setTasks(migratedTasks)
       }
     }
-  }, [isLoaded, currentBoardId, currentTasks.length, user, updateRemoteTask]) // Added updateRemoteTask to deps
+  }, [isLoaded, currentBoardId, currentTasks.length, user, updateRemoteTask])
 
-  // Actions
   const addTask = async (
     title: string,
     categoryId: string,
@@ -293,7 +275,7 @@ export default function Home() {
       deadline: dueDate || undefined,
       description: '',
       recurrence,
-      priority: priority ?? 0, // Default to 0 (low)
+      priority: priority ?? 0,
     }
 
     if (user) {
@@ -335,13 +317,11 @@ export default function Home() {
   }
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
-    // Optimistic update
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
     )
 
     if (user) {
-      // Update in Supabase
       await updateRemoteTask(id, updates)
     }
   }
@@ -381,6 +361,48 @@ export default function Home() {
           <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
+
+        {/* Login CTA for guests - Apple Design */}
+        {!user && (
+          <div className="pointer-events-none fixed top-0 right-0 z-50 flex w-full justify-end p-4 sm:p-6">
+            <button
+              onClick={async () => {
+                const supabase = createClient()
+                if (!supabase) return
+                await supabase.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                  },
+                })
+              }}
+              className="group pointer-events-auto flex items-center gap-2.5 rounded-2xl bg-[#E5E5EA] px-5 py-3 text-[15px] leading-tight font-semibold text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(0,0,0,0.06)] transition-all duration-200 hover:bg-[#D1D1D6] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_3px_6px_rgba(0,0,0,0.08)] active:scale-[0.98] sm:px-6 sm:py-3.5"
+            >
+              <svg
+                className="h-[18px] w-[18px] sm:h-5 sm:w-5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              <span>Sign in</span>
+            </button>
+          </div>
+        )}
 
         <div className="pb-safe relative z-30 mx-auto h-[calc(100vh-120px)] w-full max-w-7xl content-center items-center justify-center p-3 sm:h-[calc(100vh-100px)] sm:p-6">
           <AnimatePresence mode="popLayout">
@@ -433,15 +455,17 @@ export default function Home() {
           )}
         </div>
 
-        {/* Floating Action Button area */}
-        <div className="pb-safe pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-6 sm:pt-10">
-          <div className="pointer-events-auto">
-            <AddTaskDialog
-              categories={categories}
-              currentBoard={currentBoard}
-              onAddTask={addTask}
-              onAddCategory={addCategory}
-            />
+        <div className="pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-8 sm:pt-12">
+          <div className="pointer-events-auto relative">
+            <div className="pointer-events-none absolute inset-0 -top-20 -bottom-4 left-1/2 w-[120%] -translate-x-1/2 bg-gradient-to-t from-white/40 via-white/20 to-transparent backdrop-blur-[2px]" />
+            <div className="relative">
+              <AddTaskDialog
+                categories={categories}
+                currentBoard={currentBoard}
+                onAddTask={addTask}
+                onAddCategory={addCategory}
+              />
+            </div>
           </div>
         </div>
       </div>
