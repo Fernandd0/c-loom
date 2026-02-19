@@ -2,6 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
   Plus,
   Check,
   Trash2,
@@ -11,6 +19,7 @@ import {
   Mail,
   Menu,
   LogOut,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -176,7 +185,7 @@ function SidebarContent({
                 >
                   <Pencil size={12} />
                 </button>
-                {onDeleteBoard && boards.length > 1 && (
+                {onDeleteBoard && (
                   <button
                     onClick={() => onDeleteBoard(board.id)}
                     className="rounded p-1 text-slate-400 transition-colors hover:bg-rose-100 hover:text-rose-600"
@@ -241,6 +250,7 @@ export function Sidebar({
   const [isHovering, setIsHovering] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -322,7 +332,7 @@ export function Sidebar({
               user={user}
               onSelectBoard={onSelectBoard}
               onAddBoard={onAddBoard}
-              onDeleteBoard={onDeleteBoard}
+              onDeleteBoard={setDeleteConfirmId}
               isExpanded={isExpanded}
               editingId={editingId}
               setEditingId={setEditingId}
@@ -346,7 +356,7 @@ export function Sidebar({
             user={user}
             onSelectBoard={onSelectBoard}
             onAddBoard={onAddBoard}
-            onDeleteBoard={onDeleteBoard}
+            onDeleteBoard={setDeleteConfirmId}
             isExpanded={isExpanded}
             editingId={editingId}
             setEditingId={setEditingId}
@@ -359,6 +369,43 @@ export function Sidebar({
           />
         </div>
       )}
+
+      <Dialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-center">Delete Workspace?</DialogTitle>
+            <DialogDescription className="text-center">
+              This action cannot be undone. All tasks in this workspace will be
+              permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:outline-none sm:mt-0 sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (deleteConfirmId && onDeleteBoard) {
+                  onDeleteBoard(deleteConfirmId)
+                  setDeleteConfirmId(null)
+                }
+              }}
+              className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none sm:w-auto"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

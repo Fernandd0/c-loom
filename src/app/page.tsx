@@ -8,11 +8,13 @@ import TaskCircle from './components/TaskCircle'
 import { Task, Category, Board, TaskRecurrence } from './types'
 import { AddTaskDialog } from './components/AddTaskDialog'
 import { TaskDetailDialog } from './components/TaskDetailDialog'
-import TypingTitle from './components/TypingTitle'
 import { Sidebar } from './components/Sidebar'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useSupabaseData } from './hooks/useSupabaseData'
+import { useLocalData } from './hooks/useLocalData'
+import { Loader } from '@/components/ui/loader'
+import { LandingPage } from './components/LandingPage'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -43,10 +45,7 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [supabase])
 
-  // Legacy tasks support for migration
-  const [legacyTasks] = useStickyState<Task[]>([], 'c-loom-tasks')
-
-  // 2. Supabase Data Hook
+  // 2. Data Hooks
   const {
     boards: remoteBoards,
     categories: remoteCategories,
@@ -60,24 +59,23 @@ export default function Home() {
     createCategory: createRemoteCategory,
     setBoards: setRemoteBoards,
     syncProfile,
-    migrateLocalData,
   } = useSupabaseData(user)
 
-  // 3. Local State (Guest Mode)
-  const [localBoards, setLocalBoards, isLocalLoaded] = useStickyState<Board[]>(
-    [],
-    'c-loom-boards'
-  )
-  const [localCategories, setLocalCategories] = useStickyState<Category[]>(
-    [
-      { id: '1', name: 'Work', color: '#3b82f6', workspaceId: 'default' },
-      { id: '2', name: 'Personal', color: '#10b981', workspaceId: 'default' },
-      { id: '3', name: 'Urgent', color: '#ef4444', workspaceId: 'default' },
-    ],
-    'c-loom-categories'
-  )
+  const {
+    boards: localBoards,
+    categories: localCategories,
+    isLoaded: isLocalLoaded,
+    createBoard: createLocalBoard,
+    deleteBoard: deleteLocalBoard,
+    updateBoard: updateLocalBoard,
+    createTask: createLocalTask,
+    updateTask: updateLocalTask,
+    deleteTask: deleteLocalTask,
+    createCategory: createLocalCategory,
+    setBoards: setLocalBoards,
+  } = useLocalData()
 
-  // 4. Combined State
+  // 3. Combined State
   const isLoaded = user ? !isRemoteLoading : isLocalLoaded
   const boards = user ? remoteBoards : localBoards
   const categories = user ? remoteCategories : localCategories
@@ -91,39 +89,16 @@ export default function Home() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
+  // Auto-select board logic
   useEffect(() => {
     if (!isLoaded) return
 
-    if (boards.length === 0) {
-      if (!user) {
-        const initialBoardId = crypto.randomUUID()
-        const initialBoard: Board = {
-          id: initialBoardId,
-          name: 'Life',
-          tasks: legacyTasks.length > 0 ? legacyTasks : [],
-          createdAt: new Date().toISOString(),
-          userId: 'local',
-        }
-        setLocalBoards([initialBoard])
-        setCurrentBoardId(initialBoardId)
-      }
-    } else if (
-      !currentBoardId ||
-      !boards.find((b) => b.id === currentBoardId)
-    ) {
-      if (boards.length > 0) {
+    if (boards.length > 0) {
+      if (!currentBoardId || !boards.find((b) => b.id === currentBoardId)) {
         setCurrentBoardId(boards[0].id)
       }
     }
-  }, [
-    isLoaded,
-    boards,
-    currentBoardId,
-    user,
-    setLocalBoards,
-    setCurrentBoardId,
-    legacyTasks,
-  ])
+  }, [isLoaded, boards, currentBoardId, setCurrentBoardId])
 
   const syncedUserIdRef = useRef<string | null>(null)
 
@@ -133,32 +108,6 @@ export default function Home() {
       syncProfile(user)
     }
   }, [user?.id, syncProfile])
-
-  useEffect(() => {
-    const performMigration = async () => {
-      if (user && localBoards.length > 0) {
-        try {
-          await migrateLocalData(localBoards, localCategories)
-          setLocalBoards([])
-          setLocalCategories([])
-          console.log('Local data migrated and cleared.')
-        } catch (error) {
-          console.error('Error migrating local data:', error)
-        }
-      }
-    }
-
-    performMigration()
-  }, [
-    user,
-    // Depend on the array reference or length?
-    // Using reference is safer if useStickyState returns stable reference.
-    localBoards,
-    localCategories,
-    migrateLocalData,
-    setLocalBoards,
-    setLocalCategories,
-  ])
 
   const currentBoard = useMemo(
     () => boards.find((b) => b.id === currentBoardId) || boards[0],
@@ -183,9 +132,6 @@ export default function Home() {
       })
 
     if (user) {
-      // Optimistic updates for remote usually handled in useSupabaseData's functions
-      // but here we might need manual setRemoteBoards for collision resolution dragging?
-      // Actually useSupabaseData exposes setBoards for this exact reason (optimistic UI).
       setRemoteBoards(updateFn)
     } else {
       setLocalBoards(updateFn)
@@ -236,7 +182,6 @@ export default function Home() {
     if (hasChanges) {
       if (user) {
         setTasks(migratedTasks)
-        // iterate and update remote?
         migratedTasks.forEach((t) => {
           if (
             t.pos_x !== undefined &&
@@ -258,8 +203,7 @@ export default function Home() {
     categoryId: string,
     dueDate?: string,
     recurrence: TaskRecurrence = 'never',
-    priority?: number,
-    icon?: string
+    priority?: number
   ) => {
     if (!title.trim() || !currentBoard) return
 
@@ -281,7 +225,7 @@ export default function Home() {
     if (user) {
       await createRemoteTask(newTask)
     } else {
-      setTasks((prev) => [...prev, newTask])
+      createLocalTask(newTask)
     }
   }
 
@@ -301,10 +245,7 @@ export default function Home() {
         workspaceId: currentBoardId,
       })
     } else {
-      setLocalCategories((prev) => [
-        ...prev,
-        { ...newCategory, workspaceId: currentBoardId },
-      ])
+      createLocalCategory({ ...newCategory, workspaceId: currentBoardId })
     }
   }
 
@@ -312,37 +253,61 @@ export default function Home() {
     if (user) {
       await deleteRemoteTask(id, currentBoardId)
     } else {
-      setTasks((prev) => prev.filter((t) => t.id !== id))
+      deleteLocalTask(id)
     }
   }
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    )
-
+    // Optimistic update done in hook for local, or via setTasks via hooks?
+    // page.tsx has local setTasks which updates Generic State.
+    // But now we have hooks.
+    // The hooks have their own setters.
+    // Let's use the hooks directly.
     if (user) {
+      // remote hook handles optimistic internally via setRemoteBoards
       await updateRemoteTask(id, updates)
+    } else {
+      updateLocalTask(id, updates)
     }
+  }
+
+  const handleCreateWorkspace = async () => {
+    const newBoard = await createLocalBoard('My Workspace')
+    if (newBoard) setCurrentBoardId(newBoard.id)
   }
 
   const handleAddBoard = async () => {
     if (user) {
       await createRemoteBoard(`Workspace ${boards.length + 1}`)
     } else {
-      const newBoard: Board = {
-        id: crypto.randomUUID(),
-        name: `Workspace ${boards.length + 1}`,
-        tasks: [],
-        createdAt: new Date().toISOString(),
-        userId: 'local',
-      }
-      setLocalBoards((prev) => [...prev, newBoard])
-      setCurrentBoardId(newBoard.id)
+      const newBoard = await createLocalBoard(`Workspace ${boards.length + 1}`)
+      if (newBoard) setCurrentBoardId(newBoard.id)
     }
   }
 
-  if (!isLoaded) return null
+  // deleteLocalBoard is now part of the hook, but we need a wrapper to potentially update currentBoardId
+  const handleDeleteLocalBoard = (boardId: string) => {
+    deleteLocalBoard(boardId)
+    // Board switching is handled by useEffect
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-50">
+        <Loader />
+      </div>
+    )
+  }
+
+  // Show Landing Page if no boards (both guest and user)
+  if (boards.length === 0) {
+    return (
+      <LandingPage
+        onCreateWorkspace={user ? handleAddBoard : handleCreateWorkspace}
+        user={user}
+      />
+    )
+  }
 
   return (
     <main className="relative flex min-h-screen w-full overflow-hidden bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
@@ -352,8 +317,8 @@ export default function Home() {
         user={user}
         onSelectBoard={setCurrentBoardId}
         onAddBoard={handleAddBoard}
-        onDeleteBoard={deleteRemoteBoard}
-        onRenameBoard={updateRemoteBoard}
+        onDeleteBoard={user ? deleteRemoteBoard : handleDeleteLocalBoard}
+        onRenameBoard={user ? updateRemoteBoard : updateLocalBoard}
       />
 
       <div className="relative flex h-screen w-full flex-1 flex-col transition-all duration-300">
@@ -362,47 +327,7 @@ export default function Home() {
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
 
-        {/* Login CTA for guests - Apple Design */}
-        {!user && (
-          <div className="pointer-events-none fixed top-0 right-0 z-50 flex w-full justify-end p-4 sm:p-6">
-            <button
-              onClick={async () => {
-                const supabase = createClient()
-                if (!supabase) return
-                await supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                  },
-                })
-              }}
-              className="group pointer-events-auto flex items-center gap-2.5 rounded-2xl bg-[#E5E5EA] px-5 py-3 text-[15px] leading-tight font-semibold text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(0,0,0,0.06)] transition-all duration-200 hover:bg-[#D1D1D6] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_3px_6px_rgba(0,0,0,0.08)] active:scale-[0.98] sm:px-6 sm:py-3.5"
-            >
-              <svg
-                className="h-[18px] w-[18px] sm:h-5 sm:w-5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>Sign in</span>
-            </button>
-          </div>
-        )}
+        {/* Login CTA removed as it's now in Landing Page/Sidebar */}
 
         <div className="pb-safe relative z-30 mx-auto h-[calc(100vh-120px)] w-full max-w-7xl content-center items-center justify-center p-3 sm:h-[calc(100vh-100px)] sm:p-6">
           <AnimatePresence mode="popLayout">
