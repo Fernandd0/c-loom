@@ -5,10 +5,11 @@ import { motion } from 'framer-motion'
 import { Plus, Layout } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Loader } from '@/components/ui/loader'
+import { User } from '@supabase/supabase-js'
 
 interface LandingPageProps {
   onCreateWorkspace: () => void
-  user?: any
+  user?: User | null
 }
 
 export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
@@ -70,7 +71,10 @@ export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: {
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+      },
     },
   }
 
