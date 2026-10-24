@@ -57,7 +57,7 @@ src/
     dates.ts           deadline parsing/formatting (stored UTC, shown local)
     env.ts             validated environment variables
     supabase/          browser, server, admin and proxy clients + generated types
-  services/supabase/   queries and row <-> domain mappers
+  features/board/data/ useBoardData hook + data sources (localStorage for guests, Supabase when signed in)
   proxy.ts             refreshes the Supabase session on each request
 supabase/              config.toml and migrations
 ```
