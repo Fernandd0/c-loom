@@ -1,91 +1,85 @@
 'use client'
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 
+const UPDATE_EVENT = 'c-loom-storage-update'
+
+const noopSubscribe = () => () => {}
+
+// true in the browser after hydration, false during SSR and the hydration pass.
+export function useIsHydrated() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  )
+}
+
+function readRaw(key: string) {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function parse<T>(raw: string | null, fallback: T): T {
+  if (raw === null) return fallback
+  try {
+    return JSON.parse(raw) as T
+  } catch (e) {
+    console.error('Error parsing stored value', e)
+    return fallback
+  }
+}
+
+// localStorage-backed state, synced across hooks and tabs. Pass a stable defaultValue (module constant).
 export function useStickyState<T>(defaultValue: T, key: string) {
   const subscribe = useCallback(
     (callback: () => void) => {
       const onStorage = (event: StorageEvent) => {
-        if (event.key === key) {
-          callback()
-        }
+        if (event.key === key) callback()
       }
-
-      const onCustomUpdate = (event: CustomEvent) => {
-        if (event.detail.key === key) {
+      const onCustomUpdate = (event: Event) => {
+        if ((event as CustomEvent<{ key: string }>).detail.key === key)
           callback()
-        }
       }
 
       window.addEventListener('storage', onStorage)
-      window.addEventListener(
-        'c-loom-storage-update',
-        onCustomUpdate as EventListener
-      )
-
+      window.addEventListener(UPDATE_EVENT, onCustomUpdate)
       return () => {
         window.removeEventListener('storage', onStorage)
-        window.removeEventListener(
-          'c-loom-storage-update',
-          onCustomUpdate as EventListener
-        )
+        window.removeEventListener(UPDATE_EVENT, onCustomUpdate)
       }
     },
     [key]
   )
 
-  const getSnapshot = () => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem(key)
-  }
-
-  const getServerSnapshot = () => null
-
-  const stickyValue = useSyncExternalStore(
+  const raw = useSyncExternalStore(
     subscribe,
-    getSnapshot,
-    getServerSnapshot
+    () => readRaw(key),
+    () => null
   )
+  const isLoaded = useIsHydrated()
 
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  useEffect(() => {
-    setIsLoaded(true)
-  }, [])
-
-  const value = useMemo(() => {
-    if (stickyValue === null) return defaultValue
-    try {
-      return JSON.parse(stickyValue) as T
-    } catch (e) {
-      console.error('Error parsing stored value', e)
-      return defaultValue
-    }
-  }, [stickyValue, defaultValue])
+  const value = useMemo(() => parse(raw, defaultValue), [raw, defaultValue])
 
   const setValue = useCallback(
-    (newValue: T | ((val: T) => T)) => {
-      const valueToStore =
-        newValue instanceof Function ? (newValue as any)(value) : newValue
+    (newValue: T | ((prev: T) => T)) => {
+      // Read the latest stored value so back-to-back updates don't overwrite each other.
+      const next =
+        typeof newValue === 'function'
+          ? (newValue as (prev: T) => T)(parse(readRaw(key), defaultValue))
+          : newValue
 
       try {
-        const stringified = JSON.stringify(valueToStore)
-        window.localStorage.setItem(key, stringified)
-
-        window.dispatchEvent(
-          new CustomEvent('c-loom-storage-update', { detail: { key } })
-        )
+        window.localStorage.setItem(key, JSON.stringify(next))
+        window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: { key } }))
       } catch (e) {
         console.error('Error saving value', e)
       }
     },
-    [key, value]
+    [key, defaultValue]
   )
 
   return [value, setValue, isLoaded] as const

@@ -14,13 +14,15 @@ import {
 export function useSupabaseData(user: User | null) {
   const [boards, setBoards] = useState<Board[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Id of the user whose data is in state; loading until it matches the signed-in user.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const supabase = createClient()
+  // Key on the id: the user object changes on every token refresh.
+  const userId = user?.id ?? null
+  const isLoading = !!userId && loadedFor !== userId
 
-  const fetchData = useCallback(async () => {
-    if (!user) return
-
-    setIsLoading(true)
+  // Reads everything the user can see (RLS scopes it). Returns null on error.
+  const loadData = useCallback(async () => {
     try {
       const [workspaces, cats, tasks] = await Promise.all([
         supabase.from('workspaces').select('*').order('created_at'),
@@ -33,32 +35,46 @@ export function useSupabaseData(user: User | null) {
       if (tasks.error) throw tasks.error
 
       const allTasks = tasks.data.map(taskFromRow)
-
-      setBoards(
-        workspaces.data.map((ws) =>
+      return {
+        boards: workspaces.data.map((ws) =>
           boardFromRow(
             ws,
             allTasks.filter((t) => t.workspaceId === ws.id)
           )
-        )
-      )
-      setCategories(cats.data.map(categoryFromRow))
+        ),
+        categories: cats.data.map(categoryFromRow),
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
-    } finally {
-      setIsLoading(false)
+      return null
     }
-  }, [user, supabase])
+  }, [supabase])
 
   useEffect(() => {
-    if (user) {
-      fetchData()
-    } else {
-      setBoards([])
-      setCategories([])
-      setIsLoading(false)
+    if (!userId) return
+    // Ignore a response that arrives after the user changed or signed out.
+    let cancelled = false
+    loadData().then((data) => {
+      if (cancelled) return
+      if (data) {
+        setBoards(data.boards)
+        setCategories(data.categories)
+      }
+      setLoadedFor(userId)
+    })
+    return () => {
+      cancelled = true
     }
-  }, [user, fetchData])
+  }, [userId, loadData])
+
+  // Re-syncs state with the database, e.g. after a failed optimistic update.
+  const fetchData = async () => {
+    const data = await loadData()
+    if (data) {
+      setBoards(data.boards)
+      setCategories(data.categories)
+    }
+  }
 
   const createBoard = async (name: string) => {
     if (!user) return null
@@ -84,8 +100,9 @@ export function useSupabaseData(user: User | null) {
   const deleteBoard = async (boardId: string) => {
     if (!user) return
 
-    // Optimistic update
+    // Optimistic update; the database cascades the workspace's categories and tasks.
     setBoards((prev) => prev.filter((b) => b.id !== boardId))
+    setCategories((prev) => prev.filter((c) => c.workspaceId !== boardId))
 
     const success = await workspaceService.deleteWorkspace(supabase, boardId)
     if (!success) {

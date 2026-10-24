@@ -16,7 +16,12 @@ export interface Task {
 
 export type NewTaskInput = Pick<
   Task,
-  'title' | 'categoryId' | 'description' | 'deadline' | 'recurrence' | 'priority'
+  | 'title'
+  | 'categoryId'
+  | 'description'
+  | 'deadline'
+  | 'recurrence'
+  | 'priority'
 >
 
 export interface Category {
@@ -41,4 +46,3 @@ export interface Profile {
   fullName?: string
   avatarUrl?: string
 }
-

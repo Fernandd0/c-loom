@@ -18,12 +18,12 @@ import { LandingPage } from './components/LandingPage'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
+  // Until the session is known, don't render the guest view: signed-in users would see it flash.
+  const [isAuthReady, setIsAuthReady] = useState(false)
   const supabase = createClient()
 
   // 1. Auth Session Check
   useEffect(() => {
-    if (!supabase) return
-
     const checkSession = async () => {
       try {
         const {
@@ -32,6 +32,8 @@ export default function Home() {
         setUser(session?.user ?? null)
       } catch (error) {
         console.error('Error checking session:', error)
+      } finally {
+        setIsAuthReady(true)
       }
     }
     checkSession()
@@ -40,6 +42,7 @@ export default function Home() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setIsAuthReady(true)
     })
 
     return () => subscription.unsubscribe()
@@ -75,7 +78,7 @@ export default function Home() {
   } = useLocalData()
 
   // 3. Combined State
-  const isLoaded = user ? !isRemoteLoading : isLocalLoaded
+  const isLoaded = isAuthReady && (user ? !isRemoteLoading : isLocalLoaded)
   const boards = user ? remoteBoards : localBoards
   const allCategories = user ? remoteCategories : localCategories
 
@@ -159,46 +162,6 @@ export default function Home() {
     padding: 20,
   })
 
-  useEffect(() => {
-    if (!isLoaded || !currentBoard) return
-
-    let hasChanges = false
-    const migratedTasks = currentTasks.map((task) => {
-      if (task.pos_x === undefined || task.pos_y === undefined) {
-        hasChanges = true
-        return {
-          ...task,
-          pos_x: task.pos_x ?? Math.random() * 80 + 10,
-          pos_y: task.pos_y ?? Math.random() * 60 + 20,
-          createdAt:
-            typeof task.createdAt === 'number'
-              ? new Date(task.createdAt).toISOString()
-              : task.createdAt,
-          workspaceId: currentBoardId,
-        }
-      }
-      return task
-    })
-
-    if (hasChanges) {
-      if (user) {
-        setTasks(migratedTasks)
-        migratedTasks.forEach((t) => {
-          if (
-            t.pos_x !== undefined &&
-            currentTasks.find(
-              (old) => old.id === t.id && old.pos_x === undefined
-            )
-          ) {
-            updateRemoteTask(t.id, { pos_x: t.pos_x, pos_y: t.pos_y })
-          }
-        })
-      } else {
-        setTasks(migratedTasks)
-      }
-    }
-  }, [isLoaded, currentBoardId, currentTasks.length, user, updateRemoteTask])
-
   const addTask = async (input: NewTaskInput) => {
     if (!input.title.trim() || !currentBoard) return
 
@@ -250,13 +213,8 @@ export default function Home() {
   }
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
-    // Optimistic update done in hook for local, or via setTasks via hooks?
-    // page.tsx has local setTasks which updates Generic State.
-    // But now we have hooks.
-    // The hooks have their own setters.
-    // Let's use the hooks directly.
+    // Both hooks update state optimistically.
     if (user) {
-      // remote hook handles optimistic internally via setRemoteBoards
       await updateRemoteTask(id, updates)
     } else {
       updateLocalTask(id, updates)
