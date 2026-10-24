@@ -1,74 +1,85 @@
-# c-loom
+<div align="center">
 
-A visual task board: every task is a circle that grows the longer it waits. Higher priority starts bigger, tasks due within 24 hours turn urgent, and double-clicking a circle completes it.
+# C-Loom
 
-Use it as a guest (data stays in your browser) or sign in with Google to sync through Supabase.
+**The to-do list that grows on you.**
 
-Live: https://c-loom.vercel.app
+Every task is a circle. The longer you leave it, the bigger it gets,<br />
+until it's impossible to ignore.
 
-## Stack
+[**Open C-Loom →**](https://c-loom.vercel.app)
 
-Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, framer-motion, Supabase (Postgres + Auth via `@supabase/ssr`). Package manager: **pnpm**.
+<br />
 
-## Getting started
+<img src=".github/assets/board.png" alt="A C-Loom board: colored circles of different sizes, each one a task" width="860" />
 
-```bash
-pnpm install
-cp .env.example .env.local   # fill in the Supabase values
-pnpm dev                     # http://localhost:3000
-```
+</div>
 
-| Variable | Used by |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The app (browser and server) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only, `/api/stats` |
-| `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_*` | Supabase CLI only, never the app |
+<br />
 
-## Scripts
+## Why circles?
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js |
-| `pnpm typecheck` / `pnpm lint` / `pnpm format` | Quality |
-| `pnpm test` | Unit tests (Vitest) |
-| `pnpm test:integration` | Tests against the Supabase project in `.env` |
-| `pnpm test:e2e` | Browser tests (Playwright) |
-| `pnpm check` | Typecheck + lint + unit tests + build |
-| `pnpm db:push` | Apply `supabase/migrations` to the linked project |
-| `pnpm db:types` | Regenerate `src/lib/supabase/database.types.ts` |
+Most to-do lists treat a task you added five minutes ago the same as one you've been avoiding for a week. C-Loom doesn't.
 
-## Tests
+- **Tasks grow while they wait.** A new task starts small and swells a little every hour. The things you keep putting off end up taking over your screen.
+- **Important things start big.** Pick a priority and the circle starts larger, so it stands out from day one.
+- **Deadlines get loud.** When something is due within 24 hours, it gets a warning sign.
+- **Done means gone.** Double-click a circle to finish it and watch your board clear up.
 
-- **Unit** (`tests/unit`): dates and time zones, recurrence, circle size and collisions, data mappers, guest storage. No network.
-- **Integration** (`tests/integration`): row level security, the Supabase data source and guest import, against the project in `.env`. Creates throwaway users and deletes them.
-- **End to end** (`e2e`): the app in a real browser, as a guest and signed in. Builds and starts the app on port 3123. Locally it uses your installed Chrome.
+No lists to scroll, no columns to sort. One look tells you what needs you most.
 
-Tests that need Supabase skip themselves unless `SUPABASE_SERVICE_ROLE_KEY` is set. CI always runs unit and guest browser tests; to also run the Supabase ones, add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` as repository secrets.
+## Adding a task takes a second
 
-## Database
+Type what needs doing and press Enter. That's it. Everything else is optional:
 
-The schema lives in `supabase/migrations` and is the only way it changes. Every table has row level security: users only see their own workspaces, categories and tasks. Signing up creates the profile, a first workspace and default categories through a database trigger.
+<div align="center">
+<img src=".github/assets/new-task.png" alt="The new task form with quick due dates, repeat and priority" width="720" />
+</div>
 
-Auth settings (Google provider, redirect URLs) live in `supabase/config.toml`. Review with `supabase config diff` before `supabase config push`. The CLI reads its credentials from the environment, so load `.env` first:
+- **Category**: color-codes the circle. Make your own with a color and an icon, right from the form. The one you used last is already selected.
+- **Due date**: one tap for _Today_, _Tomorrow_ or _Next week_, or pick any day. Add a time if it matters.
+- **Repeat**: daily, weekly, monthly or yearly. When you finish a repeating task, it comes back for the next date, small again.
+- **Priority**: _Low_, _Medium_, _High_ or _Critical_. Higher priority starts as a bigger circle.
 
-```bash
-set -a; . ./.env; set +a
-pnpm exec supabase link --project-ref <project-ref>
-pnpm db:push && pnpm db:types
-```
+## Features
 
-## Project layout
+- 🫧 **Circles that grow with time and priority**: your board shows what's been waiting longest.
+- ⚠️ **Deadline alerts** for anything due in the next 24 hours.
+- 🔁 **Repeating tasks** that move to their next date when you finish them.
+- 🗂️ **Workspaces** to keep work, home and side projects apart.
+- 🏷️ **Custom categories** with your own colors and icons.
+- ☁️ **Sync with Google sign-in**, across all your devices, with your board laid out the same way everywhere.
+- ⌨️ **Keyboard first**: create a task without touching the mouse.
 
-```
-src/
-  app/                 routes, page, app-level components and hooks
-    components/task-form/   shared inputs for creating and editing tasks
-    lib/task.ts        task size, urgency, priority levels
-  lib/
-    dates.ts           deadline parsing/formatting (stored UTC, shown local)
-    env.ts             validated environment variables
-    supabase/          browser, server, admin and proxy clients + generated types
-  features/board/data/ useBoardData hook + data sources (localStorage for guests, Supabase when signed in)
-  proxy.ts             refreshes the Supabase session on each request
-supabase/              config.toml and migrations
-```
+## Try it without an account
+
+Open [c-loom.vercel.app](https://c-loom.vercel.app) and start right away. As a guest, your board is saved in your browser.
+
+When you want your tasks on every device, **sign in with Google**. C-Loom offers to bring over everything you made as a guest, and merges it into your workspace without duplicates.
+
+## Keyboard shortcuts
+
+| Action             | Shortcut                      |
+| ------------------ | ----------------------------- |
+| New task           | <kbd>⌘</kbd> <kbd>Enter</kbd> |
+| Create the task    | <kbd>Enter</kbd>              |
+| Complete a task    | Double-click the circle       |
+| Open the guide     | <kbd>⌘</kbd> <kbd>G</kbd>     |
+| Show all shortcuts | <kbd>⌘</kbd> <kbd>K</kbd>     |
+
+On Windows and Linux, create a task with <kbd>Ctrl</kbd> <kbd>Enter</kbd>.
+
+## Questions
+
+**Where is my data?**<br />
+As a guest, only in your browser on this device. Once you sign in, it's stored in your account, and nobody else can see your workspaces, categories or tasks.
+
+**What happens when I finish a task?**<br />
+It disappears. C-Loom is about what's still on your plate, not a history of what you did. Repeating tasks are the exception: they move to their next date.
+
+**Will my deadlines be right if I travel?**<br />
+Yes. Due dates are saved in a universal time and always shown in your current time zone.
+
+## Built with
+
+Next.js, React, TypeScript, Tailwind CSS and Supabase.
