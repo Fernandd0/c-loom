@@ -26,23 +26,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Board } from '../types'
 import { LoginButton } from '@/components/LoginButton'
 import { InfoDialog } from './InfoDialog'
-import { createClient } from '@/lib/supabase/client'
+import { signOut } from '@/lib/auth'
+import type { User } from '@supabase/supabase-js'
+import Image from 'next/image'
 
-function UserProfile({ user }: { user: any }) {
-  const supabase = createClient()
-
-  const handleLogout = async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
-  }
-
+function UserProfile({ user }: { user: User }) {
   return (
     <div className="rounded-2xl border-0 bg-[#F2F2F7] p-3">
       <div className="mb-2 flex items-center gap-2">
         {user.user_metadata?.avatar_url ? (
-          <img
+          <Image
             src={user.user_metadata.avatar_url}
             alt="Profile"
+            width={40}
+            height={40}
             className="h-10 w-10 rounded-full border-0 shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
           />
         ) : (
@@ -62,7 +59,7 @@ function UserProfile({ user }: { user: any }) {
         </div>
       </div>
       <button
-        onClick={handleLogout}
+        onClick={signOut}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-[13px] font-semibold text-[#8E8E93] shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all hover:text-[#FF3B30] hover:shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
       >
         <LogOut size={14} />
@@ -75,7 +72,7 @@ function UserProfile({ user }: { user: any }) {
 interface SidebarProps {
   boards: Board[]
   currentBoardId: string
-  user?: any
+  user?: User | null
   onSelectBoard: (boardId: string) => void
   onAddBoard: () => void
   onDeleteBoard?: (boardId: string) => void
@@ -85,7 +82,7 @@ interface SidebarProps {
 interface SidebarContentProps {
   boards: Board[]
   currentBoardId: string
-  user?: any
+  user?: User | null
   onSelectBoard: (boardId: string) => void
   onAddBoard: () => void
   onDeleteBoard?: (boardId: string) => void

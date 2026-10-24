@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Layout } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Plus } from 'lucide-react'
+import { signInWithGoogle } from '@/lib/auth'
 import { Loader } from '@/components/ui/loader'
 import { User } from '@supabase/supabase-js'
 
@@ -34,17 +34,12 @@ export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
 
   const handleLogin = async () => {
     setIsLoading(true)
-    const supabase = createClient()
-    if (!supabase) {
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      console.error('Google sign-in failed:', error)
       setIsLoading(false)
-      return
     }
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
   }
 
   if (isLoading) {
