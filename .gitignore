@@ -48,3 +48,9 @@ supabase/backups/
 AGENTS.md
 CLAUDE.md
 docs/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
