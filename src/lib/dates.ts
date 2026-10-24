@@ -53,6 +53,18 @@ export function addDays(date: Date, days: number) {
   return next
 }
 
+// The next local `weekday` (0 = Sunday, 1 = Monday…) strictly after `date`.
+export function nextWeekday(date: Date, weekday: number) {
+  return addDays(date, ((weekday - date.getDay() + 6) % 7) + 1)
+}
+
+// Saturday of the current weekend: today on a Saturday or Sunday, otherwise the coming Saturday.
+export function weekendStart(date: Date) {
+  const day = date.getDay()
+  if (day === 6 || day === 0) return new Date(date)
+  return nextWeekday(date, 6)
+}
+
 // Same local time, `months` later; the day is clamped to the month's length (Jan 31 + 1 month = Feb 28/29).
 export function addMonths(date: Date, months: number) {
   const next = new Date(date)

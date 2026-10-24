@@ -6,10 +6,12 @@ import {
   formatAge,
   formatDeadline,
   isOverdue,
+  nextWeekday,
   parseDeadline,
   splitDeadline,
   toLocalDateValue,
   toLocalTimeValue,
+  weekendStart,
 } from '@/lib/dates'
 
 const ZONES = [
@@ -65,6 +67,17 @@ describe.each(ZONES)('deadlines in %s', (zone) => {
     const date = parseDeadline('2026-10-24')!
     expect(toLocalDateValue(date)).toBe('2026-10-24')
     expect(toLocalTimeValue(date)).toBe('23:59')
+  })
+
+  // 2026-10-24 is a Saturday; late evening is when a UTC-based weekday would be wrong.
+  it('finds next Monday and this weekend on the local calendar', () => {
+    const day = (d: number, h = 23) => new Date(2026, 9, d, h, 30)
+    const value = (d: Date) => toLocalDateValue(d)
+    expect(value(nextWeekday(day(24), 1))).toBe('2026-10-26')
+    expect(value(nextWeekday(day(26), 1))).toBe('2026-11-02') // Monday → next Monday
+    expect(value(weekendStart(day(22)))).toBe('2026-10-24') // Thursday
+    expect(value(weekendStart(day(24)))).toBe('2026-10-24') // Saturday
+    expect(value(weekendStart(day(25)))).toBe('2026-10-25') // Sunday
   })
 
   it('counts calendar days across a DST change', () => {

@@ -17,8 +17,8 @@ export function GuideTab() {
       <div className="rounded-2xl border border-[#E5E5EA] bg-gradient-to-b from-white to-[#FAFAFA] p-4">
         <p className="text-center text-sm leading-relaxed text-[#1C1C1E]">
           Tasks{' '}
-          <span className="font-semibold text-[#1C1C1E]">grow larger</span> as
-          deadlines approach.
+          <span className="font-semibold text-[#1C1C1E]">grow larger</span> with
+          time and as deadlines approach. Higher priority grows faster.
           <br />
           Complete them before they{' '}
           <span className="font-semibold text-[#1C1C1E]">
@@ -35,10 +35,11 @@ export function GuideTab() {
           </div>
         </div>
         <p className="text-center text-xs font-semibold text-rose-900">
-          Urgent Alert
+          Deadline Alerts
         </p>
         <p className="mt-1 text-center text-[10px] text-rose-700">
-          Shows when deadline is within 24 hours
+          A clock when due within 3 days, an alert within 24 hours, a red ring
+          once overdue
         </p>
       </div>
 

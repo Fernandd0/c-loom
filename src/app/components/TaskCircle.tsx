@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { AlertOctagon } from 'lucide-react'
+import { AlertOctagon, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Task } from '../types'
-import { getTaskDiameter, isTaskUrgent } from '../lib/task'
+import { getTaskDiameter, getTaskUrgency, TaskUrgency } from '../lib/task'
 
 interface TaskCircleProps {
   task: Task
@@ -20,13 +20,13 @@ export default function TaskCircle({
 }: TaskCircleProps) {
   const [clickCount, setClickCount] = useState(0)
 
-  const [status, setStatus] = useState<'chill' | 'urgent'>('chill')
+  const [urgency, setUrgency] = useState<TaskUrgency>('none')
   const [size, setSize] = useState(80)
 
   useEffect(() => {
     const calcTime = () => {
       const now = Date.now()
-      setStatus(isTaskUrgent(task, now) ? 'urgent' : 'chill')
+      setUrgency(getTaskUrgency(task, now))
       setSize(getTaskDiameter(task, now))
     }
 
@@ -50,8 +50,7 @@ export default function TaskCircle({
     return () => clearTimeout(timer)
   }, [clickCount, onSelect, onComplete, task])
 
-  const isFresh = status === 'chill'
-  const isUrgent = status === 'urgent'
+  const isUrgent = urgency === 'today' || urgency === 'overdue'
 
   const customStyle = color
     ? {
@@ -80,10 +79,9 @@ export default function TaskCircle({
       className={cn(
         'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 p-4 text-center transition-all duration-300 ease-in-out',
 
-        !color && isFresh && 'border-emerald-500 bg-emerald-400 text-white',
-        !color &&
-          isUrgent &&
-          'animate-pulse-slow border-rose-500 bg-rose-500 text-white',
+        !color && !isUrgent && 'border-emerald-500 bg-emerald-400 text-white',
+        !color && isUrgent && 'border-rose-500 bg-rose-500 text-white',
+        urgency === 'overdue' && 'ring-4 ring-[#FF3B30] ring-offset-2',
 
         color && 'font-bold text-white'
       )}
@@ -97,7 +95,19 @@ export default function TaskCircle({
     >
       <div className="relative z-10 flex flex-col items-center gap-1">
         {isUrgent && (
-          <AlertOctagon className="h-8 w-8 animate-pulse text-white drop-shadow-sm" />
+          <AlertOctagon
+            aria-label={urgency === 'overdue' ? 'Overdue' : 'Due today'}
+            className={cn(
+              'h-8 w-8 text-white drop-shadow-sm',
+              urgency === 'overdue' && 'animate-pulse'
+            )}
+          />
+        )}
+        {urgency === 'soon' && (
+          <Clock
+            aria-label="Due soon"
+            className="h-5 w-5 text-white/90 drop-shadow-sm"
+          />
         )}
 
         <span className="line-clamp-3 leading-tight font-bold tracking-tight break-words drop-shadow-md">
