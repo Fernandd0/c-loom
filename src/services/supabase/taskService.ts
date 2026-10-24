@@ -1,97 +1,47 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import { Task } from '@/app/types'
+import { taskToInsert, taskToUpdate } from './mappers'
 
 export const createTask = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   task: Task
 ) => {
-  try {
-    const { error } = await supabase.from('tasks').insert({
-      id: task.id,
-      workspace_id: task.workspaceId,
-      title: task.title,
-      description: task.description,
-      pos_x: task.pos_x,
-      pos_y: task.pos_y,
-      completed: task.completed,
-      deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
-      category_id: task.categoryId === 'default' ? null : task.categoryId,
-      created_at: task.createdAt,
-      recurrence: task.recurrence || 'never',
-      priority: task.priority ?? 0,
-    })
+  const { error } = await supabase.from('tasks').insert(taskToInsert(task))
 
-    if (error) {
-      console.error('Error creating task:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error creating task:', error)
+  if (error) {
+    console.error('Error creating task:', error)
     return false
   }
+  return true
 }
 
 export const updateTask = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   taskId: string,
   updates: Partial<Task>
 ) => {
-  try {
-    // Build the update object dynamically
-    const updateData: any = {}
-    
-    if (updates.title !== undefined) updateData.title = updates.title
-    if (updates.description !== undefined) updateData.description = updates.description
-    if (updates.pos_x !== undefined) updateData.pos_x = updates.pos_x
-    if (updates.pos_y !== undefined) updateData.pos_y = updates.pos_y
-    if (updates.completed !== undefined) {
-      updateData.completed = updates.completed
-      updateData.completed_at = updates.completed ? new Date().toISOString() : null
-    }
-    if (updates.deadline !== undefined) {
-      updateData.deadline = updates.deadline ? new Date(updates.deadline).toISOString() : null
-    }
-    if (updates.categoryId !== undefined) {
-      updateData.category_id = updates.categoryId === 'default' ? null : updates.categoryId
-    }
-    if (updates.recurrence !== undefined) {
-      updateData.recurrence = updates.recurrence
-    }
-    if (updates.priority !== undefined) {
-      updateData.priority = updates.priority
-    }
+  const { error } = await supabase
+    .from('tasks')
+    .update(taskToUpdate(updates))
+    .eq('id', taskId)
 
-    const { error } = await supabase
-      .from('tasks')
-      .update(updateData)
-      .eq('id', taskId)
-
-    if (error) {
-      console.error('Error updating task:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error updating task:', error)
+  if (error) {
+    console.error('Error updating task:', error)
     return false
   }
+  return true
 }
 
 export const deleteTask = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   taskId: string
 ) => {
-  try {
-    const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId)
 
-    if (error) {
-      console.error('Error deleting task:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error deleting task:', error)
+  if (error) {
+    console.error('Error deleting task:', error)
     return false
   }
+  return true
 }

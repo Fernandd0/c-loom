@@ -1,11 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { env } from '@/lib/env'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-export const createClient = () => {
-  if (!supabaseUrl || !supabaseUrl.startsWith('http') || !supabaseKey) {
-    return null
-  }
-  return createBrowserClient(supabaseUrl, supabaseKey)
-}
+// createBrowserClient returns a singleton in the browser, so calling this per render is cheap.
+export const createClient = () =>
+  createBrowserClient(env.supabaseUrl, env.supabaseAnonKey)

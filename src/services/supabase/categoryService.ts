@@ -1,71 +1,52 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
 import { Category } from '@/app/types'
+import { categoryToInsert, categoryToUpdate } from './mappers'
 
 export const createCategory = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   category: Category
 ) => {
-  try {
-    const { error } = await supabase.from('categories').insert({
-      id: category.id,
-      workspace_id: category.workspaceId,
-      name: category.name,
-      color: category.color,
-    })
+  const { error } = await supabase
+    .from('categories')
+    .insert(categoryToInsert(category))
 
-    if (error) {
-      console.error('Error creating category:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error creating category:', error)
+  if (error) {
+    console.error('Error creating category:', error)
     return false
   }
+  return true
 }
 
 export const updateCategory = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   categoryId: string,
   updates: Partial<Category>
 ) => {
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .update({
-        name: updates.name,
-        color: updates.color,
-      })
-      .eq('id', categoryId)
+  const { error } = await supabase
+    .from('categories')
+    .update(categoryToUpdate(updates))
+    .eq('id', categoryId)
 
-    if (error) {
-      console.error('Error updating category:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error updating category:', error)
+  if (error) {
+    console.error('Error updating category:', error)
     return false
   }
+  return true
 }
 
 export const deleteCategory = async (
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   categoryId: string
 ) => {
-  try {
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', categoryId)
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId)
 
-    if (error) {
-      console.error('Error deleting category:', error)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('Unexpected error deleting category:', error)
+  if (error) {
+    console.error('Error deleting category:', error)
     return false
   }
+  return true
 }
