@@ -32,6 +32,7 @@ interface AddTaskDialogProps {
 }
 
 const EMPTY_DEADLINE: DeadlineValue = { date: '', time: '' }
+const KBD = 'px-1.5 py-0 text-[11px] shadow-none'
 
 export function AddTaskDialog({
   categories,
@@ -221,13 +222,13 @@ export function AddTaskDialog({
 
             <div className="flex items-center justify-between gap-3 border-t border-[#E5E5EA] bg-[#FAFAFA] px-5 py-3 sm:px-6">
               <span className="hidden items-center gap-1 text-[12px] text-[#8E8E93] sm:flex">
-                <Kbd>↵</Kbd> or <Kbd>⌘</Kbd>
-                <Kbd>↵</Kbd> to create
+                <Kbd className={KBD}>↵</Kbd> or <Kbd className={KBD}>⌘</Kbd>
+                <Kbd className={KBD}>↵</Kbd> to create
               </span>
               <Button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full disabled:opacity-50 sm:w-auto sm:px-6"
+                className="w-full bg-[#1C1C1E] text-white hover:bg-[#2C2C2E] disabled:bg-[#1C1C1E] disabled:opacity-40 sm:w-auto sm:px-6"
               >
                 Create task
               </Button>

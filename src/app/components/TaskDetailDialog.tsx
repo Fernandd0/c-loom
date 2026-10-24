@@ -105,7 +105,7 @@ export function TaskDetailDialog({
       <DialogContent className="w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-lg">
         <GlassCard className="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
           <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 pr-6">
               {isEditing ? (
                 <>
                   <DialogTitle className="sr-only">Edit task</DialogTitle>
