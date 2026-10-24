@@ -9,7 +9,7 @@ import {
   trackConsoleErrors,
 } from './helpers'
 
-// Needs a real Supabase project; see README "Tests".
+// Needs a real Supabase project and SUPABASE_SERVICE_ROLE_KEY; skipped otherwise.
 test.skip(!hasSupabase, 'Supabase credentials not available')
 
 let cleanup: (() => Promise<unknown>) | undefined

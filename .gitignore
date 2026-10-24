@@ -48,6 +48,7 @@ supabase/backups/
 AGENTS.md
 CLAUDE.md
 docs/
+CONTRIBUTING.md
 
 # Playwright
 /test-results/
