@@ -7,8 +7,10 @@ import {
   buildDeadline,
   formatDeadline,
   isOverdue,
+  nextWeekday,
   parseDeadline,
   toLocalDateValue,
+  weekendStart,
 } from '@/lib/dates'
 import { chipClass } from './ChipGroup'
 
@@ -26,11 +28,13 @@ interface DeadlineFieldProps {
 
 export function DeadlineField({ value, onChange }: DeadlineFieldProps) {
   const now = new Date()
+  // On a weekend "This weekend" is today, so drop picks that repeat an earlier date.
   const quickPicks = [
     { label: 'Today', date: toLocalDateValue(now) },
     { label: 'Tomorrow', date: toLocalDateValue(addDays(now, 1)) },
-    { label: 'Next week', date: toLocalDateValue(addDays(now, 7)) },
-  ]
+    { label: 'This weekend', date: toLocalDateValue(weekendStart(now)) },
+    { label: 'Next week', date: toLocalDateValue(nextWeekday(now, 1)) },
+  ].filter((pick, i, all) => all.findIndex((p) => p.date === pick.date) === i)
   const isQuickPick = quickPicks.some((p) => p.date === value.date)
   const deadline = parseDeadline(buildDeadline(value.date, value.time))
 

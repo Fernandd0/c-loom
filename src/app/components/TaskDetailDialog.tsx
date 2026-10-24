@@ -1,36 +1,20 @@
 'use client'
 
 import * as React from 'react'
-import { Task, Category, TaskRecurrence } from '../types'
+import { Task, Category } from '../types'
 import { GlassCard } from './GlassCard'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  AlignLeft,
-  Calendar,
-  Clock,
-  Edit2,
-  Flag,
-  Repeat,
-  Save,
-  Tag,
-  Trash2,
-  X,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { AlignLeft, Clock, Repeat, Trash2 } from 'lucide-react'
 import {
   buildDeadline,
   formatAge,
-  formatDeadline,
   isOverdue,
   parseDeadline,
   splitDeadline,
 } from '@/lib/dates'
-import { PRIORITY_LEVELS, RECURRENCE_OPTIONS, priorityLevel } from '../lib/task'
-import { ChipGroup, FieldLabel } from './task-form/ChipGroup'
-import { CategoryField } from './task-form/CategoryField'
-import { DeadlineField, DeadlineValue } from './task-form/DeadlineField'
+import { priorityLevel, recurrenceLabel, scheduleUpdate } from '../lib/task'
+import { TaskFields, TaskFieldsValue } from './task-form/TaskFields'
 
 interface TaskDetailDialogProps {
   task: Task
@@ -42,24 +26,19 @@ interface TaskDetailDialogProps {
   onUpdate: (id: string, updates: Partial<Task>) => void
 }
 
-interface Draft {
-  title: string
-  description: string
-  categoryId: string
-  deadline: DeadlineValue
-  recurrence: TaskRecurrence
-  priority: number
+// A text draft readable synchronously, so a save triggered twice in one tick (blur
+// right after Enter, or after closing the dialog) only saves once.
+function useDraft() {
+  const ref = React.useRef<string | null>(null)
+  const [, rerender] = React.useState(0)
+  const set = (value: string | null) => {
+    ref.current = value
+    rerender((n) => n + 1)
+  }
+  return [ref, set] as const
 }
 
-const draftFrom = (task: Task): Draft => ({
-  title: task.title,
-  description: task.description ?? '',
-  categoryId: task.categoryId,
-  deadline: splitDeadline(task.deadline),
-  recurrence: task.recurrence,
-  priority: priorityLevel(task.priority).value,
-})
-
+// Every field edits in place and saves on change; there is no separate edit mode.
 export function TaskDetailDialog({
   task,
   category,
@@ -69,240 +48,169 @@ export function TaskDetailDialog({
   onDelete,
   onUpdate,
 }: TaskDetailDialogProps) {
-  const [draft, setDraft] = React.useState<Draft | null>(null)
-  const isEditing = draft !== null
+  // Text drafts exist only while their field is being edited; otherwise the saved task shows.
+  const [titleDraft, setTitleDraft] = useDraft()
+  const [descriptionDraft, setDescriptionDraft] = useDraft()
 
-  const update = (changes: Partial<Draft>) =>
-    setDraft((d) => (d ? { ...d, ...changes } : d))
-
-  const handleSave = () => {
-    if (!draft || !draft.title.trim()) return
-    onUpdate(task.id, {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      categoryId: draft.categoryId,
-      deadline: buildDeadline(draft.deadline.date, draft.deadline.time),
-      recurrence: draft.deadline.date ? draft.recurrence : 'never',
-      priority: draft.priority,
-    })
-    setDraft(null)
+  const saveTitle = () => {
+    const title = titleDraft.current?.trim()
+    if (title && title !== task.title) onUpdate(task.id, { title })
+    setTitleDraft(null)
   }
 
-  const shownCategory = isEditing
-    ? categories.find((c) => c.id === draft.categoryId)
-    : category
+  const saveDescription = () => {
+    const draft = descriptionDraft.current
+    if (draft !== null && draft.trim() !== (task.description ?? ''))
+      onUpdate(task.id, { description: draft.trim() })
+    setDescriptionDraft(null)
+  }
+
+  const handleFieldsChange = (changes: Partial<TaskFieldsValue>) => {
+    const schedule: Partial<Task> = {}
+    if (changes.deadline)
+      schedule.deadline = buildDeadline(
+        changes.deadline.date,
+        changes.deadline.time
+      )
+    if (changes.recurrence) schedule.recurrence = changes.recurrence
+    const updates: Partial<Task> =
+      changes.deadline || changes.recurrence ? scheduleUpdate(schedule) : {}
+    if (changes.categoryId !== undefined)
+      updates.categoryId = changes.categoryId
+    if (changes.priority !== undefined) updates.priority = changes.priority
+    onUpdate(task.id, updates)
+  }
+
   const deadline = parseDeadline(task.deadline)
   const overdue = !!deadline && isOverdue(deadline)
+  const color = category?.color || '#374151'
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) setDraft(null)
+        if (!next) {
+          saveTitle()
+          saveDescription()
+        }
         onOpenChange(next)
       }}
     >
-      <DialogContent className="w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-lg">
+      <DialogContent
+        className="w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-lg"
+        // Radix sees Escape before the input does: cancel a title edit instead of closing.
+        onEscapeKeyDown={(e) => {
+          if (titleDraft.current === null) return
+          e.preventDefault()
+          setTitleDraft(null)
+        }}
+      >
         <GlassCard className="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
-          <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4 pr-6">
-              {isEditing ? (
+          <div className="space-y-5">
+            <div className="pr-6">
+              {titleDraft.current !== null ? (
                 <>
-                  <DialogTitle className="sr-only">Edit task</DialogTitle>
-                  <Input
-                    value={draft.title}
-                    onChange={(e) => update({ title: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  <DialogTitle className="sr-only">{task.title}</DialogTitle>
+                  <input
+                    value={titleDraft.current}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onBlur={saveTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur()
+                    }}
                     aria-label="Task title"
                     maxLength={500}
                     autoFocus
-                    className="text-2xl font-bold sm:text-3xl"
-                    style={{ color: shownCategory?.color || '#374151' }}
+                    className="-mx-2 w-full rounded-lg bg-[#F2F2F7] px-2 py-1 text-3xl font-bold tracking-tight outline-none sm:text-4xl"
+                    style={{ color }}
                   />
                 </>
               ) : (
-                <DialogTitle
-                  className="flex-1 text-3xl font-bold tracking-tight break-words sm:text-4xl"
-                  style={{ color: shownCategory?.color || '#374151' }}
-                >
-                  {task.title}
+                <DialogTitle asChild>
+                  <h2>
+                    <button
+                      type="button"
+                      onClick={() => setTitleDraft(task.title)}
+                      title="Edit title"
+                      className="-mx-2 w-full rounded-lg px-2 py-1 text-left text-3xl font-bold tracking-tight break-words transition-colors hover:bg-[#F2F2F7] sm:text-4xl"
+                      style={{ color }}
+                    >
+                      {task.title}
+                    </button>
+                  </h2>
                 </DialogTitle>
               )}
-
-              <div className="flex gap-2">
-                {isEditing ? (
-                  <>
-                    <Button
-                      onClick={handleSave}
-                      disabled={!draft.title.trim()}
-                      aria-label="Save"
-                      className="h-9 w-9 rounded-md bg-[#1C1C1E] p-0 text-white shadow-sm hover:bg-[#2C2C2E]"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => setDraft(null)}
-                      aria-label="Cancel"
-                      className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm hover:bg-slate-50"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    onClick={() => setDraft(draftFrom(task))}
-                    aria-label="Edit"
-                    className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm hover:bg-slate-50"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
             </div>
 
-            {isEditing ? (
-              <div className="space-y-5">
-                <div>
-                  <FieldLabel icon={AlignLeft}>Details</FieldLabel>
-                  <textarea
-                    value={draft.description}
-                    onChange={(e) => update({ description: e.target.value })}
-                    placeholder="Add details…"
-                    rows={3}
-                    className="w-full rounded-xl border border-[#D1D1D6] bg-white px-3 py-2 text-sm outline-none focus:border-[#C7C7CC] focus:ring-4 focus:ring-[#D1D1D6]/30"
-                  />
-                </div>
-                <div>
-                  <FieldLabel icon={Tag}>Category</FieldLabel>
-                  <CategoryField
-                    categories={categories}
-                    value={draft.categoryId}
-                    onChange={(categoryId) => update({ categoryId })}
-                  />
-                </div>
-                <div>
-                  <FieldLabel icon={Calendar}>Due</FieldLabel>
-                  <DeadlineField
-                    value={draft.deadline}
-                    onChange={(deadline) => update({ deadline })}
-                  />
-                </div>
-                {draft.deadline.date && (
-                  <div>
-                    <FieldLabel icon={Repeat}>Repeat</FieldLabel>
-                    <ChipGroup
-                      label="Repeat"
-                      options={RECURRENCE_OPTIONS}
-                      value={draft.recurrence}
-                      onChange={(recurrence) => update({ recurrence })}
-                    />
-                  </div>
+            <TaskFields
+              value={{
+                categoryId: task.categoryId,
+                deadline: splitDeadline(task.deadline),
+                recurrence: task.recurrence,
+                priority: priorityLevel(task.priority).value,
+              }}
+              onChange={handleFieldsChange}
+              categories={categories}
+            />
+
+            {(overdue || (deadline && task.recurrence !== 'never')) && (
+              <div className="space-y-1.5 text-[13px]">
+                {overdue && (
+                  <p className="font-medium text-[#FF3B30]">Overdue</p>
                 )}
-                <div>
-                  <FieldLabel icon={Flag}>Priority</FieldLabel>
-                  <ChipGroup
-                    label="Priority"
-                    options={PRIORITY_LEVELS}
-                    value={draft.priority}
-                    onChange={(priority) => update({ priority })}
-                  />
-                </div>
-              </div>
-            ) : (
-              <dl className="space-y-3 text-sm">
-                <Row icon={Tag} label="Category">
-                  {category ? (
-                    <span
-                      className="inline-flex items-center rounded-md px-2 py-0.5 font-medium"
-                      style={{
-                        backgroundColor: `${category.color}20`,
-                        color: category.color,
-                      }}
-                    >
-                      {category.name}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 italic">No category</span>
-                  )}
-                </Row>
-                <Row icon={Calendar} label="Due">
-                  {deadline ? (
-                    <span
-                      className={cn(
-                        overdue
-                          ? 'font-medium text-[#FF3B30]'
-                          : 'text-slate-700'
-                      )}
-                    >
-                      {formatDeadline(deadline)}
-                      {overdue && ' · overdue'}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 italic">No due date</span>
-                  )}
-                </Row>
-                {task.recurrence !== 'never' && (
-                  <Row icon={Repeat} label="Repeat">
-                    <span className="text-slate-700 capitalize">
-                      {task.recurrence}
-                    </span>
-                  </Row>
-                )}
-                <Row icon={Flag} label="Priority">
-                  <span className="text-slate-700">
-                    {priorityLevel(task.priority).label}
-                  </span>
-                </Row>
-                <Row icon={Clock} label="Created">
-                  <span className="text-slate-700">
-                    {formatAge(task.createdAt)}
-                  </span>
-                </Row>
-                {task.description && (
-                  <p className="pt-1 whitespace-pre-wrap text-slate-700">
-                    {task.description}
+                {deadline && task.recurrence !== 'never' && (
+                  <p className="flex items-center gap-1.5 text-[#3C3C43]">
+                    <Repeat className="h-3.5 w-3.5 text-[#8E8E93]" />
+                    {recurrenceLabel(task.recurrence, deadline)}
                   </p>
                 )}
-              </dl>
-            )}
-
-            {!isEditing && (
-              <div className="flex justify-start border-t border-slate-200 pt-4">
-                <Button
-                  onClick={() => {
-                    onDelete(task.id)
-                    onOpenChange(false)
-                  }}
-                  className="h-9 rounded-md border border-slate-200 bg-white px-4 text-sm text-slate-600 shadow-sm transition-colors hover:border-red-100 hover:bg-slate-50 hover:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
               </div>
             )}
+
+            {descriptionDraft.current !== null || task.description ? (
+              <textarea
+                value={descriptionDraft.current ?? task.description ?? ''}
+                onFocus={() => setDescriptionDraft(task.description ?? '')}
+                onChange={(e) => setDescriptionDraft(e.target.value)}
+                onBlur={saveDescription}
+                placeholder="Add details…"
+                aria-label="Description"
+                rows={3}
+                autoFocus={
+                  descriptionDraft.current !== null && !task.description
+                }
+                className="-mx-2 w-full resize-none rounded-lg bg-transparent px-2 py-1 text-[15px] whitespace-pre-wrap text-[#3C3C43] outline-none placeholder:text-[#C7C7CC] hover:bg-[#F2F2F7] focus:bg-[#F2F2F7]"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDescriptionDraft('')}
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#8E8E93] hover:text-[#1C1C1E]"
+              >
+                <AlignLeft className="h-3.5 w-3.5" />
+                Add details
+              </button>
+            )}
+
+            <div className="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#8E8E93]">
+                <Clock className="h-3.5 w-3.5" />
+                Created {formatAge(task.createdAt)}
+              </span>
+              <Button
+                onClick={() => {
+                  onDelete(task.id)
+                  onOpenChange(false)
+                }}
+                className="h-9 rounded-md border border-slate-200 bg-white px-4 text-sm text-slate-600 shadow-sm transition-colors hover:border-red-100 hover:bg-slate-50 hover:text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
           </div>
         </GlassCard>
       </DialogContent>
     </Dialog>
-  )
-}
-
-function Row({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <dt className="flex w-24 shrink-0 items-center gap-1.5 font-medium text-slate-500">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </dt>
-      <dd>{children}</dd>
-    </div>
   )
 }
