@@ -8,7 +8,7 @@ export const PRIORITY_LEVELS = [
   { label: 'Low', value: 0 },
   { label: 'Medium', value: 4 },
   { label: 'High', value: 7 },
-  { label: 'Urgent', value: 10 },
+  { label: 'Critical', value: 10 },
 ] as const
 
 // Maps any stored 0–10 priority to the closest level shown in the UI.

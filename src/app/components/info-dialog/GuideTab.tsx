@@ -57,7 +57,7 @@ export function GuideTab() {
           </div>
           <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
             <span className="mt-0.5 text-[#8E8E93]">⚡</span>
-            <span className="text-[#3C3C43]">Priority: Low → Urgent</span>
+            <span className="text-[#3C3C43]">Priority: Low → Critical</span>
           </div>
           <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
             <span className="mt-0.5 text-[#8E8E93]">🔄</span>
