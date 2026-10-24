@@ -60,17 +60,21 @@ test('saves deadlines in local time and they never drift on edit', async ({
   ).toBe('18:30')
   expect(task.priority).toBe(7)
 
+  // Re-picking the same day rewrites the deadline from the inputs each time.
   await page.getByText('Write report', { exact: true }).click()
-  await expect(page.getByText('Tomorrow, 6:30 PM')).toBeVisible()
+  const due = page.getByRole('button', { name: 'Due: Tomorrow, 6:30 PM' })
+  await due.click()
   for (let i = 0; i < 3; i++) {
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('button', { name: 'Tomorrow', exact: true }).click()
   }
+  await page.keyboard.press('Escape')
+  await expect(due).toBeVisible()
   expect((await stored(page, 'Write report'))!.deadline).toBe(task.deadline)
 })
 
 test('only offers Repeat once a due date is set', async ({ page }) => {
   await page.getByRole('button', { name: 'New task' }).click()
+  await page.getByRole('button', { name: /^Due:/ }).click()
   const repeat = page.getByRole('radiogroup', { name: 'Repeat' })
   await expect(repeat).toHaveCount(0)
   await page.getByRole('button', { name: 'Today', exact: true }).click()
@@ -123,4 +127,168 @@ test('a category created from the form is selected and used', async ({
     () => JSON.parse(localStorage.getItem('c-loom-boards') || '[]')[0].tasks[0]
   )
   expect(task.categoryId).toBe(gym.id)
+})
+
+test('edits a task in place from its detail view', async ({ page }) => {
+  await addTask(page, 'Draft', { due: 'Today', repeat: 'Weekly' })
+  await page.getByText('Draft', { exact: true }).click()
+  const dialog = page.getByRole('dialog')
+
+  await dialog.getByRole('button', { name: 'Draft' }).click()
+  await dialog.getByLabel('Task title').fill('Final')
+  await dialog.getByLabel('Task title').press('Enter')
+  await expect(dialog.getByRole('button', { name: 'Final' })).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Priority: Low' }).click()
+  await page.getByRole('radio', { name: 'Critical' }).click()
+  await expect(dialog.getByText(/^Every \w+day$/)).toBeVisible()
+
+  await expect
+    .poll(async () => (await stored(page, 'Final'))?.priority)
+    .toBe(10)
+  expect(await stored(page, 'Draft')).toBeUndefined()
+
+  // Clearing the date also stops the repeat.
+  await dialog.getByRole('button', { name: /^Due:/ }).click()
+  await page.getByRole('button', { name: 'No date', exact: true }).click()
+  await page.keyboard.press('Escape')
+  await expect(dialog.getByText(/^Every /)).toHaveCount(0)
+  const final = (await stored(page, 'Final'))! as StoredTask & {
+    recurrence: string
+  }
+  expect(final.deadline).toBeUndefined()
+  expect(final.recurrence).toBe('never')
+})
+
+test('Escape cancels a title edit without closing the task', async ({
+  page,
+}) => {
+  await addTask(page, 'Keep this title')
+  await page.getByText('Keep this title', { exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Keep this title' }).click()
+  await dialog.getByLabel('Task title').fill('Discarded')
+  await page.keyboard.press('Escape')
+  await expect(
+    dialog.getByRole('button', { name: 'Keep this title' })
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  expect(await stored(page, 'Discarded')).toBeUndefined()
+})
+
+test('focusing a category dims the rest and new tasks start in it', async ({
+  page,
+}) => {
+  await addTask(page, 'Work task')
+  await addTask(page, 'Home task', { newCategory: 'Home' })
+  const bar = page.getByRole('radiogroup', { name: 'Show category' })
+  await bar.getByRole('radio', { name: /^Home/ }).click()
+
+  const wrapper = (title: string) =>
+    page
+      .getByText(title, { exact: true })
+      .locator('xpath=ancestor::div[contains(@class,"absolute")][1]')
+  await expect(wrapper('Work task')).toHaveClass(/opacity-20/)
+  await expect(wrapper('Home task')).not.toHaveClass(/opacity-20/)
+
+  await page.getByRole('button', { name: 'New task' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Category: Home' })
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await bar.getByRole('radio', { name: 'All' }).click()
+  await expect(wrapper('Work task')).not.toHaveClass(/opacity-20/)
+})
+
+test('renames, recolors and deletes categories', async ({ page }) => {
+  await addTask(page, 'Ship it')
+  await page.getByRole('button', { name: 'Edit categories' }).click()
+  const dialog = page.getByRole('dialog')
+
+  const name = dialog.getByLabel('Name of Work')
+  await name.fill('Job')
+  await name.press('Enter')
+  await expect(dialog.getByLabel('Name of Job')).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Color and icon for Job' }).click()
+  await page.getByRole('button', { name: 'Purple' }).click()
+  await page.keyboard.press('Escape')
+
+  const categories = () =>
+    page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('c-loom-categories') || '[]') as {
+          id: string
+          name: string
+          color: string
+        }[]
+    )
+  await expect
+    .poll(async () => (await categories()).find((c) => c.name === 'Job')?.color)
+    .toBe('#AF52DE')
+
+  await dialog.getByRole('button', { name: 'Delete Job' }).click()
+  await expect(dialog).toContainText('1 task stays, without a category.')
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(dialog.getByLabel('Name of Job')).toHaveCount(0)
+  expect((await categories()).some((c) => c.name === 'Job')).toBe(false)
+
+  // The task survives without a category.
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('Ship it', { exact: true })).toBeVisible()
+  expect((await stored(page, 'Ship it')) as unknown).toMatchObject({
+    categoryId: '',
+  })
+})
+
+test('reads due date, priority, repeat and category from the title', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'New task' }).click()
+  const title = page.getByLabel('Task title')
+  await title.fill('Pay rent tomorrow 9am #personal !high every month')
+  await expect(
+    page.getByRole('button', { name: 'Category: Personal' })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Due: Tomorrow, 9:00 AM' })
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Priority: High' })
+  ).toBeVisible()
+
+  // A pick by hand beats the title.
+  await page.getByRole('button', { name: 'Priority: High' }).click()
+  await page.getByRole('radio', { name: 'Critical' }).click()
+  await title.press('Enter')
+
+  await expect(page.getByText('Pay rent', { exact: true })).toBeVisible()
+  const task = (await stored(page, 'Pay rent'))! as StoredTask & {
+    recurrence: string
+    categoryId: string
+  }
+  expect(task.priority).toBe(10)
+  expect(task.recurrence).toBe('monthly')
+  expect(await daysFromToday(page, task.deadline!)).toBe(1)
+  const categories = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('c-loom-categories') || '[]')
+  )
+  expect(
+    categories.find((c: { id: string }) => c.id === task.categoryId).name
+  ).toBe('Personal')
+})
+
+test('"Keep as text" turns title reading off', async ({ page }) => {
+  await page.getByRole('button', { name: 'New task' }).click()
+  await page.getByLabel('Task title').fill('Review notes tomorrow')
+  await expect(
+    page.getByRole('button', { name: 'Due: Tomorrow' })
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Keep as text' }).click()
+  await expect(page.getByRole('button', { name: 'Due: no date' })).toBeVisible()
+  await page.getByLabel('Task title').press('Enter')
+  const task = (await stored(page, 'Review notes tomorrow'))!
+  expect(task.deadline).toBeUndefined()
 })

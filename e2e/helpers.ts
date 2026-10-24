@@ -74,31 +74,42 @@ export async function addTask(
   await page.getByRole('button', { name: 'New task' }).click()
   await page.getByLabel('Task title').fill(title)
   if (options.newCategory) {
+    await page.getByRole('button', { name: /^Category:/ }).click()
     await page.getByRole('button', { name: 'New', exact: true }).click()
     await page.getByPlaceholder('Category name').fill(options.newCategory)
     await page.getByRole('button', { name: 'Add', exact: true }).click()
     await expect(
-      page.getByRole('radio', { name: options.newCategory })
-    ).toHaveAttribute('aria-checked', 'true')
+      page.getByRole('button', { name: `Category: ${options.newCategory}` })
+    ).toBeVisible()
   }
   if (options.due) {
+    await page.getByRole('button', { name: /^Due:/ }).click()
     await page.getByRole('button', { name: options.due, exact: true }).click()
-  }
-  if (options.time) {
-    await page.getByRole('button', { name: 'Add time' }).click()
-    await page.getByLabel('Time', { exact: true }).fill(options.time)
-  }
-  if (options.repeat) {
-    await page
-      .getByRole('radiogroup', { name: 'Repeat' })
-      .getByRole('radio', { name: options.repeat })
-      .click()
+    if (options.time) {
+      await page.getByRole('button', { name: 'Add time' }).click()
+      await page.getByLabel('Time', { exact: true }).fill(options.time)
+    }
+    if (options.repeat) {
+      await page
+        .getByRole('radiogroup', { name: 'Repeat' })
+        .getByRole('radio', { name: options.repeat })
+        .click()
+    }
+    // Closes only the date picker, not the dialog.
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('radiogroup', { name: 'Repeat' })).toHaveCount(
+      0
+    )
   }
   if (options.priority) {
+    await page.getByRole('button', { name: /^Priority:/ }).click()
     await page
       .getByRole('radiogroup', { name: 'Priority' })
       .getByRole('radio', { name: options.priority })
       .click()
+    await expect(
+      page.getByRole('button', { name: `Priority: ${options.priority}` })
+    ).toBeVisible()
   }
   await page.getByLabel('Task title').press('Enter')
   await expect(page.getByText(title, { exact: true })).toBeVisible()

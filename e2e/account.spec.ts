@@ -76,9 +76,12 @@ test('a failed save shows an accessible alert and rolls back', async ({
       : route.continue()
   )
   await page.getByText('Keep me', { exact: true }).click()
-  await page.getByRole('button', { name: 'Edit' }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Keep me' })
+    .click()
   await page.getByLabel('Task title').fill('Should not stick')
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByLabel('Task title').press('Enter')
 
   // Must be announced even while the task dialog is open.
   await expect(page.getByRole('alert')).toContainText("Couldn't save")
