@@ -5,6 +5,7 @@ import { AnimatePresence } from 'framer-motion'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Loader } from '@/components/ui/loader'
+import { cn } from '@/lib/utils'
 import { useBoardData } from '@/features/board/data/useBoardData'
 import { useStickyState } from './hooks/useStickyState'
 import { useCollisionResolution } from './hooks/useCollisionResolution'
@@ -16,6 +17,7 @@ import { Sidebar } from './components/Sidebar'
 import { LandingPage } from './components/LandingPage'
 import { ErrorToast } from './components/ErrorToast'
 import { GuestImportBanner } from './components/GuestImportBanner'
+import { CategoryBar } from '@/features/board/components/CategoryBar'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -63,6 +65,8 @@ export default function Home() {
     completeTask,
     deleteTask,
     createCategory,
+    updateCategory,
+    deleteCategory,
     setBoardTasks,
     guestImport,
     importGuestData,
@@ -100,6 +104,15 @@ export default function Home() {
   )
 
   const currentTasks = useMemo(() => currentBoard?.tasks || [], [currentBoard])
+
+  // Focused category: the rest of the board dims. Ignored if it isn't on this board.
+  const [categoryFilter, setCategoryFilter] = useStickyState<string>(
+    '',
+    'c-loom-category-filter'
+  )
+  const activeFilter = categories.some((c) => c.id === categoryFilter)
+    ? categoryFilter
+    : ''
 
   // Look the task up on every render so the detail dialog reflects saved edits.
   const selectedTask = currentTasks.find((t) => t.id === selectedTaskId)
@@ -201,6 +214,19 @@ export default function Home() {
       )}
 
       <div className="relative flex h-screen w-full flex-1 flex-col transition-all duration-300">
+        {categories.length > 0 || currentTasks.length > 0 ? (
+          <div className="absolute inset-x-0 top-3 z-40 flex justify-center px-14">
+            <CategoryBar
+              categories={categories}
+              tasks={currentTasks}
+              filterId={activeFilter}
+              onFilterChange={setCategoryFilter}
+              onUpdate={updateCategory}
+              onDelete={deleteCategory}
+              onCreate={addCategory}
+            />
+          </div>
+        ) : null}
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
@@ -210,10 +236,14 @@ export default function Home() {
           <AnimatePresence mode="popLayout">
             {currentTasks.map((task) => {
               const category = categories.find((c) => c.id === task.categoryId)
+              const dimmed = !!activeFilter && task.categoryId !== activeFilter
               return (
                 <div
                   key={task.id}
-                  className="transition-z absolute duration-200 hover:z-50"
+                  className={cn(
+                    'transition-z absolute duration-200 hover:z-50',
+                    dimmed && 'opacity-20 grayscale transition-[opacity,filter]'
+                  )}
                   style={{
                     top: `${task.pos_y}%`,
                     left: `${task.pos_x}%`,
@@ -263,6 +293,7 @@ export default function Home() {
             <div className="relative">
               <AddTaskDialog
                 categories={categories}
+                preferredCategoryId={activeFilter}
                 onAddTask={addTask}
                 onAddCategory={addCategory}
               />
