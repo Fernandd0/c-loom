@@ -10,6 +10,10 @@ interface CollisionConfig {
 
 const getTaskRadius = (task: Task) => getTaskDiameter(task) / 2
 
+// Circles grow continuously, so touching circles overlap by a sliver more on every pass.
+// Ignoring sub-pixel overlaps and moves lets the layout settle instead of nudging forever.
+const SETTLE_PX = 0.5
+
 export function useCollisionResolution(
   tasks: Task[],
   setTasks: (tasks: Task[]) => void,
@@ -58,7 +62,7 @@ export function useCollisionResolution(
           const distance = Math.sqrt(dx * dx + dy * dy)
           const minDist = r1 + r2 + 20
 
-          if (distance < minDist) {
+          if (distance < minDist - SETTLE_PX) {
             hasChanges = true
 
             const overlap = minDist - distance
@@ -82,7 +86,7 @@ export function useCollisionResolution(
           }
         }
 
-        if (nPx !== px || nPy !== py) {
+        if (Math.abs(nPx - px) > SETTLE_PX || Math.abs(nPy - py) > SETTLE_PX) {
           hasChanges = true
           // Replace instead of mutating: t1 may still be the object held in React state.
           newTasks[j] = {
