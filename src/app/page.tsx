@@ -1,20 +1,20 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import { Loader } from '@/components/ui/loader'
+import { useBoardData } from '@/features/board/data/useBoardData'
 import { useStickyState } from './hooks/useStickyState'
 import { useCollisionResolution } from './hooks/useCollisionResolution'
 import TaskCircle from './components/TaskCircle'
-import { Task, Category, Board, NewTaskInput } from './types'
+import { Task, Category, NewTaskInput } from './types'
 import { AddTaskDialog } from './components/AddTaskDialog'
 import { TaskDetailDialog } from './components/TaskDetailDialog'
 import { Sidebar } from './components/Sidebar'
-import { createClient } from '@/lib/supabase/client'
-import { User } from '@supabase/supabase-js'
-import { useSupabaseData } from './hooks/useSupabaseData'
-import { useLocalData } from './hooks/useLocalData'
-import { Loader } from '@/components/ui/loader'
 import { LandingPage } from './components/LandingPage'
+import { ErrorToast } from './components/ErrorToast'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -22,7 +22,6 @@ export default function Home() {
   const [isAuthReady, setIsAuthReady] = useState(false)
   const supabase = createClient()
 
-  // 1. Auth Session Check
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -48,57 +47,35 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [supabase])
 
-  // 2. Data Hooks
+  // Same API for guests (localStorage) and signed-in users (Supabase).
   const {
-    boards: remoteBoards,
-    categories: remoteCategories,
-    isLoading: isRemoteLoading,
-    createBoard: createRemoteBoard,
-    deleteBoard: deleteRemoteBoard,
-    updateBoard: updateRemoteBoard,
-    createTask: createRemoteTask,
-    updateTask: updateRemoteTask,
-    deleteTask: deleteRemoteTask,
-    createCategory: createRemoteCategory,
-    setBoards: setRemoteBoards,
-  } = useSupabaseData(user)
+    boards,
+    categories: allCategories,
+    isLoaded,
+    error,
+    dismissError,
+    createBoard,
+    deleteBoard,
+    renameBoard,
+    createTask,
+    updateTask,
+    deleteTask,
+    createCategory,
+    setBoardTasks,
+  } = useBoardData(user, isAuthReady)
 
-  const {
-    boards: localBoards,
-    categories: localCategories,
-    isLoaded: isLocalLoaded,
-    createBoard: createLocalBoard,
-    deleteBoard: deleteLocalBoard,
-    updateBoard: updateLocalBoard,
-    createTask: createLocalTask,
-    updateTask: updateLocalTask,
-    deleteTask: deleteLocalTask,
-    createCategory: createLocalCategory,
-    setBoards: setLocalBoards,
-  } = useLocalData()
-
-  // 3. Combined State
-  const isLoaded = isAuthReady && (user ? !isRemoteLoading : isLocalLoaded)
-  const boards = user ? remoteBoards : localBoards
-  const allCategories = user ? remoteCategories : localCategories
-
-  // Board Selection State
   const [currentBoardId, setCurrentBoardId] = useStickyState<string>(
     '',
     'c-loom-current-board'
   )
-
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Auto-select board logic
+  // Keep a valid board selected.
   useEffect(() => {
-    if (!isLoaded) return
-
-    if (boards.length > 0) {
-      if (!currentBoardId || !boards.find((b) => b.id === currentBoardId)) {
-        setCurrentBoardId(boards[0].id)
-      }
+    if (!isLoaded || boards.length === 0) return
+    if (!boards.some((b) => b.id === currentBoardId)) {
+      setCurrentBoardId(boards[0].id)
     }
   }, [isLoaded, boards, currentBoardId, setCurrentBoardId])
 
@@ -106,14 +83,15 @@ export default function Home() {
     () => boards.find((b) => b.id === currentBoardId) || boards[0],
     [boards, currentBoardId]
   )
+  const currentBoardKey = currentBoard?.id
 
   // Categories belong to a workspace; guest defaults use the 'default' workspace.
   const categories = useMemo(
     () =>
       allCategories.filter(
-        (c) => c.workspaceId === currentBoard?.id || c.workspaceId === 'default'
+        (c) => c.workspaceId === currentBoardKey || c.workspaceId === 'default'
       ),
-    [allCategories, currentBoard?.id]
+    [allCategories, currentBoardKey]
   )
 
   const currentTasks = useMemo(() => currentBoard?.tasks || [], [currentBoard])
@@ -121,51 +99,31 @@ export default function Home() {
   // Look the task up on every render so the detail dialog reflects saved edits.
   const selectedTask = currentTasks.find((t) => t.id === selectedTaskId)
 
-  const setTasks = (newTasksUpdater: Task[] | ((prev: Task[]) => Task[])) => {
-    if (!currentBoard) return
-
-    const updateFn = (prevBoards: Board[]) =>
-      prevBoards.map((board) => {
-        if (board.id === currentBoard.id) {
-          const newTasks =
-            typeof newTasksUpdater === 'function'
-              ? newTasksUpdater(board.tasks)
-              : newTasksUpdater
-          return { ...board, tasks: newTasks }
-        }
-        return board
-      })
-
-    if (user) {
-      setRemoteBoards(updateFn)
-    } else {
-      setLocalBoards(updateFn)
-    }
-  }
-
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight })
     }
-
-    if (typeof window !== 'undefined') {
-      handleResize()
-    }
-
+    handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  useCollisionResolution(currentTasks, setTasks, {
+  const setCurrentTasks = useCallback(
+    (tasks: Task[]) => {
+      if (currentBoardKey) setBoardTasks(currentBoardKey, tasks)
+    },
+    [currentBoardKey, setBoardTasks]
+  )
+
+  useCollisionResolution(currentTasks, setCurrentTasks, {
     containerWidth: windowSize.width,
     containerHeight: windowSize.height,
     padding: 20,
   })
 
-  const addTask = async (input: NewTaskInput) => {
+  const addTask = (input: NewTaskInput) => {
     if (!input.title.trim() || !currentBoard) return
-
-    const newTask: Task = {
+    createTask({
       ...input,
       id: crypto.randomUUID(),
       title: input.title.trim(),
@@ -175,70 +133,27 @@ export default function Home() {
       pos_x: Math.random() * 80 + 10,
       pos_y: Math.random() * 60 + 20,
       workspaceId: currentBoard.id,
-    }
-
-    if (user) {
-      await createRemoteTask(newTask)
-    } else {
-      createLocalTask(newTask)
-    }
+    })
   }
 
   // Returns the new category's id so the caller can select it right away.
   const addCategory = async (name: string, color: string, icon?: string) => {
     if (!currentBoard) return undefined
-
-    const newCategory: Category = {
+    const category: Category = {
       id: crypto.randomUUID(),
       name,
       color,
       icon,
       workspaceId: currentBoard.id,
     }
-
-    if (user) {
-      await createRemoteCategory(newCategory)
-    } else {
-      await createLocalCategory(newCategory)
-    }
-    return newCategory.id
+    createCategory(category)
+    return category.id
   }
 
-  const completeTask = async (id: string) => {
-    if (user) {
-      await deleteRemoteTask(id, currentBoard?.id ?? currentBoardId)
-    } else {
-      deleteLocalTask(id)
-    }
-  }
-
-  const updateTask = async (id: string, updates: Partial<Task>) => {
-    // Both hooks update state optimistically.
-    if (user) {
-      await updateRemoteTask(id, updates)
-    } else {
-      updateLocalTask(id, updates)
-    }
-  }
-
-  const handleCreateWorkspace = async () => {
-    const newBoard = await createLocalBoard('My Workspace')
-    if (newBoard) setCurrentBoardId(newBoard.id)
-  }
-
-  const handleAddBoard = async () => {
-    if (user) {
-      await createRemoteBoard(`Workspace ${boards.length + 1}`)
-    } else {
-      const newBoard = await createLocalBoard(`Workspace ${boards.length + 1}`)
-      if (newBoard) setCurrentBoardId(newBoard.id)
-    }
-  }
-
-  // deleteLocalBoard is now part of the hook, but we need a wrapper to potentially update currentBoardId
-  const handleDeleteLocalBoard = (boardId: string) => {
-    deleteLocalBoard(boardId)
-    // Board switching is handled by useEffect
+  const addBoard = () => {
+    const name =
+      boards.length === 0 ? 'My Workspace' : `Workspace ${boards.length + 1}`
+    setCurrentBoardId(createBoard(name))
   }
 
   if (!isLoaded) {
@@ -252,10 +167,10 @@ export default function Home() {
   // Show Landing Page if no boards (both guest and user)
   if (boards.length === 0) {
     return (
-      <LandingPage
-        onCreateWorkspace={user ? handleAddBoard : handleCreateWorkspace}
-        user={user}
-      />
+      <>
+        <LandingPage onCreateWorkspace={addBoard} user={user} />
+        <ErrorToast message={error} onDismiss={dismissError} />
+      </>
     )
   }
 
@@ -266,18 +181,17 @@ export default function Home() {
         currentBoardId={currentBoardId}
         user={user}
         onSelectBoard={setCurrentBoardId}
-        onAddBoard={handleAddBoard}
-        onDeleteBoard={user ? deleteRemoteBoard : handleDeleteLocalBoard}
-        onRenameBoard={user ? updateRemoteBoard : updateLocalBoard}
+        onAddBoard={addBoard}
+        onDeleteBoard={deleteBoard}
+        onRenameBoard={renameBoard}
       />
+      <ErrorToast message={error} onDismiss={dismissError} />
 
       <div className="relative flex h-screen w-full flex-1 flex-col transition-all duration-300">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
-
-        {/* Login CTA removed as it's now in Landing Page/Sidebar */}
 
         <div className="pb-safe relative z-30 mx-auto h-[calc(100vh-120px)] w-full max-w-7xl content-center items-center justify-center p-3 sm:h-[calc(100vh-100px)] sm:p-6">
           <AnimatePresence mode="popLayout">
@@ -296,7 +210,7 @@ export default function Home() {
                   <TaskCircle
                     task={task}
                     color={category?.color}
-                    onComplete={completeTask}
+                    onComplete={deleteTask}
                     onSelect={(t) => setSelectedTaskId(t.id)}
                   />
                 </div>
@@ -313,7 +227,7 @@ export default function Home() {
               categories={categories}
               open={!!selectedTask}
               onOpenChange={(open) => !open && setSelectedTaskId(null)}
-              onDelete={completeTask}
+              onDelete={deleteTask}
               onUpdate={updateTask}
             />
           )}
