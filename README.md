@@ -30,9 +30,20 @@ pnpm dev                     # http://localhost:3000
 |---|---|
 | `pnpm dev` / `pnpm build` / `pnpm start` | Next.js |
 | `pnpm typecheck` / `pnpm lint` / `pnpm format` | Quality |
-| `pnpm check` | Typecheck + lint + build (same as CI) |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm test:integration` | Tests against the Supabase project in `.env` |
+| `pnpm test:e2e` | Browser tests (Playwright) |
+| `pnpm check` | Typecheck + lint + unit tests + build |
 | `pnpm db:push` | Apply `supabase/migrations` to the linked project |
 | `pnpm db:types` | Regenerate `src/lib/supabase/database.types.ts` |
+
+## Tests
+
+- **Unit** (`tests/unit`): dates and time zones, recurrence, circle size and collisions, data mappers, guest storage. No network.
+- **Integration** (`tests/integration`): row level security, the Supabase data source and guest import, against the project in `.env`. Creates throwaway users and deletes them.
+- **End to end** (`e2e`): the app in a real browser, as a guest and signed in. Builds and starts the app on port 3123. Locally it uses your installed Chrome.
+
+Tests that need Supabase skip themselves unless `SUPABASE_SERVICE_ROLE_KEY` is set. CI always runs unit and guest browser tests; to also run the Supabase ones, add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` as repository secrets.
 
 ## Database
 
