@@ -1,5 +1,6 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
+import { Category } from '@/app/types'
 import { BoardDataSource } from './types'
 import {
   boardFromRow,
@@ -25,6 +26,12 @@ function rows<T>(result: Result<T[] | null>): T[] {
 function expectRows<T>(result: Result<T[] | null>, what: string) {
   if (rows(result).length === 0) throw new Error(`${what} not found`)
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Guest defaults use ids like '1'; anything that isn't a UUID gets a new one.
+const asUuid = (id: string) => (UUID.test(id) ? id : crypto.randomUUID())
+// Insert, or do nothing if the row already exists, so an interrupted import can be retried.
+const KEEP_EXISTING = { onConflict: 'id', ignoreDuplicates: true } as const
 
 export function createSupabaseSource(
   supabase: SupabaseClient<Database>,
@@ -106,6 +113,90 @@ export function createSupabaseSource(
       unwrap(
         await supabase.from('categories').insert(categoryToInsert(category))
       )
+    },
+
+    async savePositions(positions) {
+      await Promise.all(
+        positions.map(async ({ id, pos_x, pos_y }) =>
+          unwrap(
+            await supabase.from('tasks').update({ pos_x, pos_y }).eq('id', id)
+          )
+        )
+      )
+    },
+
+    async importGuest({ boards, categories }) {
+      const existing = rows(
+        await supabase.from('workspaces').select('id, name')
+      )
+
+      // Only boards with tasks are worth bringing over.
+      for (const board of boards.filter((b) => b.tasks.length > 0)) {
+        // Merge into a workspace with the same name (e.g. both have "My Workspace") instead of duplicating it.
+        const target =
+          existing.find((w) => w.id === board.id) ??
+          existing.find(
+            (w) => w.name.toLowerCase() === board.name.toLowerCase()
+          )
+        const workspaceId = target?.id ?? asUuid(board.id)
+        if (!target) {
+          unwrap(
+            await supabase
+              .from('workspaces')
+              .upsert(
+                { id: workspaceId, user_id: userId, name: board.name },
+                KEEP_EXISTING
+              )
+          )
+          existing.push({ id: workspaceId, name: board.name })
+        }
+
+        // The new workspace already has the seeded defaults; reuse them by name.
+        const available: Category[] = rows(
+          await supabase
+            .from('categories')
+            .select('*')
+            .eq('workspace_id', workspaceId)
+        ).map(categoryFromRow)
+        const categoryIds = new Map<string, string>()
+
+        const guestCategories = categories.filter(
+          (c) => c.workspaceId === 'default' || c.workspaceId === board.id
+        )
+        for (const guest of guestCategories) {
+          const match =
+            available.find((c) => c.id === guest.id) ??
+            available.find(
+              (c) => c.name.toLowerCase() === guest.name.toLowerCase()
+            )
+          if (match) {
+            categoryIds.set(guest.id, match.id)
+            continue
+          }
+          const created = { ...guest, id: asUuid(guest.id), workspaceId }
+          unwrap(
+            await supabase
+              .from('categories')
+              .upsert(categoryToInsert(created), KEEP_EXISTING)
+          )
+          categoryIds.set(guest.id, created.id)
+          available.push(created)
+        }
+
+        unwrap(
+          await supabase.from('tasks').upsert(
+            board.tasks.map((t) =>
+              taskToInsert({
+                ...t,
+                id: asUuid(t.id),
+                workspaceId,
+                categoryId: categoryIds.get(t.categoryId) ?? '',
+              })
+            ),
+            KEEP_EXISTING
+          )
+        )
+      }
     },
   }
 }

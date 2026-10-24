@@ -15,6 +15,7 @@ import { TaskDetailDialog } from './components/TaskDetailDialog'
 import { Sidebar } from './components/Sidebar'
 import { LandingPage } from './components/LandingPage'
 import { ErrorToast } from './components/ErrorToast'
+import { GuestImportBanner } from './components/GuestImportBanner'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -59,9 +60,13 @@ export default function Home() {
     renameBoard,
     createTask,
     updateTask,
+    completeTask,
     deleteTask,
     createCategory,
     setBoardTasks,
+    guestImport,
+    importGuestData,
+    dismissGuestImport,
   } = useBoardData(user, isAuthReady)
 
   const [currentBoardId, setCurrentBoardId] = useStickyState<string>(
@@ -186,6 +191,14 @@ export default function Home() {
         onRenameBoard={renameBoard}
       />
       <ErrorToast message={error} onDismiss={dismissError} />
+      {guestImport && !error && (
+        <GuestImportBanner
+          taskCount={guestImport.taskCount}
+          isImporting={guestImport.isImporting}
+          onImport={importGuestData}
+          onDismiss={dismissGuestImport}
+        />
+      )}
 
       <div className="relative flex h-screen w-full flex-1 flex-col transition-all duration-300">
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -210,7 +223,7 @@ export default function Home() {
                   <TaskCircle
                     task={task}
                     color={category?.color}
-                    onComplete={deleteTask}
+                    onComplete={completeTask}
                     onSelect={(t) => setSelectedTaskId(t.id)}
                   />
                 </div>

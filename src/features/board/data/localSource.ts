@@ -52,6 +52,16 @@ const normalizeTask = (task: Task, workspaceId: string): Task => {
 
 const done = async () => {}
 
+// Removes guest data after it has been imported into an account.
+export function clearGuestData() {
+  try {
+    window.localStorage.removeItem(BOARDS_KEY)
+    window.localStorage.removeItem(CATEGORIES_KEY)
+  } catch (e) {
+    console.error('Error clearing guest data', e)
+  }
+}
+
 export const localSource: BoardDataSource = {
   async load() {
     const boards = read<Board[]>(BOARDS_KEY, []).map((b) => ({
@@ -69,6 +79,7 @@ export const localSource: BoardDataSource = {
   updateTask: done,
   deleteTask: done,
   createCategory: done,
+  savePositions: done,
 
   saveSnapshot({ boards, categories }: BoardSnapshot) {
     try {
