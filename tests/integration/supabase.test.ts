@@ -85,16 +85,12 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
   })
 
   describe('signup provisioning', () => {
-    it('creates the profile, one workspace and three default categories', async () => {
+    it('creates the profile, one workspace and two default categories', async () => {
       const { data: profiles } = await a.client.from('profiles').select('id')
       expect(profiles).toEqual([{ id: a.id }])
       const { boards, categories } = await a.source.load()
       expect(boards).toHaveLength(1)
-      expect(categories.map((c) => c.name).sort()).toEqual([
-        'Personal',
-        'Urgent',
-        'Work',
-      ])
+      expect(categories.map((c) => c.name).sort()).toEqual(['Personal', 'Work'])
     })
   })
 
@@ -135,6 +131,16 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         )
       ).rejects.toThrow()
 
+      await expect(
+        b.source.updateCategory(categories[0].id, { name: 'hacked' })
+      ).rejects.toThrow()
+      await b.source.deleteCategory(categories[0].id)
+      expect(
+        (await a.source.load()).categories.some(
+          (c) => c.id === categories[0].id
+        )
+      ).toBe(true)
+
       // B deleting A's task silently matches nothing; the task survives.
       await b.source.deleteTask(task.id)
       const after = (await a.source.load()).boards[0].tasks
@@ -160,6 +166,7 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         categoryId: categories[0].id,
         deadline: '2026-10-25T23:30:00.000Z',
         recurrence: 'weekly',
+        recurrenceAnchor: '2026-10-18T23:30:00.000Z',
         priority: 7,
       })
       await a.source.createTask(task)
@@ -179,6 +186,10 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         description: 'details',
         categoryId: categories[0].id,
       })
+      // Postgres writes the same instant as "+00:00".
+      expect(new Date(saved!.recurrenceAnchor!).toISOString()).toBe(
+        '2026-10-18T23:30:00.000Z'
+      )
 
       await expect(
         a.source.updateTask(task.id, { priority: 42 })
@@ -197,7 +208,7 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         createdAt: new Date().toISOString(),
         userId: a.id,
       })
-      expect(seeded).toHaveLength(3)
+      expect(seeded).toHaveLength(2)
       expect(seeded.every((c) => c.workspaceId === id)).toBe(true)
 
       await a.source.createTask(newTask(id))
@@ -205,6 +216,38 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
       const { boards, categories } = await a.source.load()
       expect(boards.some((w) => w.id === id)).toBe(false)
       expect(categories.some((c) => c.workspaceId === id)).toBe(false)
+    })
+
+    it('edits a category and deletes it while keeping its tasks', async () => {
+      const { boards } = await a.source.load()
+      const category = {
+        id: crypto.randomUUID(),
+        name: 'Gym',
+        color: '#FF9500',
+        workspaceId: boards[0].id,
+      }
+      await a.source.createCategory(category)
+      await a.source.updateCategory(category.id, {
+        name: 'Fitness',
+        color: '#34C759',
+        icon: 'dumbbell',
+      })
+      const task = newTask(boards[0].id, { categoryId: category.id })
+      await a.source.createTask(task)
+
+      let data = await a.source.load()
+      expect(data.categories.find((c) => c.id === category.id)).toMatchObject({
+        name: 'Fitness',
+        color: '#34C759',
+        icon: 'dumbbell',
+      })
+
+      await a.source.deleteCategory(category.id)
+      data = await a.source.load()
+      expect(data.categories.some((c) => c.id === category.id)).toBe(false)
+      expect(
+        data.boards[0].tasks.find((t) => t.id === task.id)?.categoryId
+      ).toBe('')
     })
 
     it('saves positions and skips tasks that no longer exist', async () => {

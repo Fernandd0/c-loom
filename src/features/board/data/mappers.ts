@@ -23,6 +23,7 @@ export const taskFromRow = (row: Tables<'tasks'>): Task => ({
   workspaceId: row.workspace_id,
   deadline: row.deadline ?? undefined,
   recurrence: row.recurrence as TaskRecurrence,
+  recurrenceAnchor: row.recurrence_anchor ?? undefined,
   priority: row.priority,
 })
 
@@ -37,6 +38,7 @@ export const taskToInsert = (task: Task): TablesInsert<'tasks'> => ({
   priority: task.priority ?? 0,
   recurrence: task.recurrence,
   deadline: toIso(task.deadline),
+  recurrence_anchor: toIso(task.recurrenceAnchor),
   created_at: task.createdAt,
 })
 
@@ -51,6 +53,8 @@ export const taskToUpdate = (updates: Partial<Task>): TablesUpdate<'tasks'> => {
   if (updates.priority !== undefined) row.priority = updates.priority
   if (updates.recurrence !== undefined) row.recurrence = updates.recurrence
   if ('deadline' in updates) row.deadline = toIso(updates.deadline)
+  if ('recurrenceAnchor' in updates)
+    row.recurrence_anchor = toIso(updates.recurrenceAnchor)
   if (updates.createdAt !== undefined) row.created_at = updates.createdAt
   return row
 }

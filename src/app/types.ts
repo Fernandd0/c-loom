@@ -11,6 +11,8 @@ export interface Task {
   workspaceId: string
   deadline?: string
   recurrence: TaskRecurrence
+  // The deadline the repeat counts from, so the 31st stays the 31st; unset = deadline.
+  recurrenceAnchor?: string
   priority?: number // 0 (normal) to 10 (highest priority)
 }
 

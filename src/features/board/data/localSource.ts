@@ -8,7 +8,6 @@ const CATEGORIES_KEY = 'c-loom-categories'
 const DEFAULT_CATEGORIES: Category[] = [
   { id: '1', name: 'Work', color: '#3b82f6', workspaceId: 'default' },
   { id: '2', name: 'Personal', color: '#10b981', workspaceId: 'default' },
-  { id: '3', name: 'Urgent', color: '#ef4444', workspaceId: 'default' },
 ]
 
 function read<T>(key: string, fallback: T): T {
@@ -79,6 +78,8 @@ export const localSource: BoardDataSource = {
   updateTask: done,
   deleteTask: done,
   createCategory: done,
+  updateCategory: done,
+  deleteCategory: done,
   savePositions: done,
 
   saveSnapshot({ boards, categories }: BoardSnapshot) {

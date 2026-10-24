@@ -21,6 +21,7 @@ const task: Task = {
   workspaceId: 'w1',
   deadline: '2026-10-25T23:30:00.000Z',
   recurrence: 'weekly',
+  recurrenceAnchor: '2026-10-18T23:30:00.000Z',
   priority: 7,
 }
 
@@ -51,6 +52,9 @@ describe('task mappers', () => {
   it('only sends the fields being updated, and clears a removed deadline', () => {
     expect(taskToUpdate({ title: 'New' })).toEqual({ title: 'New' })
     expect(taskToUpdate({ deadline: undefined })).toEqual({ deadline: null })
+    expect(taskToUpdate({ recurrenceAnchor: undefined })).toEqual({
+      recurrence_anchor: null,
+    })
     expect(taskToUpdate({ priority: 0, categoryId: '' })).toEqual({
       priority: 0,
       category_id: null,

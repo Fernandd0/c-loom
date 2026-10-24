@@ -6,6 +6,7 @@ import {
   boardFromRow,
   categoryFromRow,
   categoryToInsert,
+  categoryToUpdate,
   taskFromRow,
   taskToInsert,
   taskToUpdate,
@@ -113,6 +114,22 @@ export function createSupabaseSource(
       unwrap(
         await supabase.from('categories').insert(categoryToInsert(category))
       )
+    },
+
+    async updateCategory(categoryId, updates) {
+      expectRows(
+        await supabase
+          .from('categories')
+          .update(categoryToUpdate(updates))
+          .eq('id', categoryId)
+          .select('id'),
+        'Category'
+      )
+    },
+
+    async deleteCategory(categoryId) {
+      // Tasks keep going without a category (on delete set null).
+      unwrap(await supabase.from('categories').delete().eq('id', categoryId))
     },
 
     async savePositions(positions) {

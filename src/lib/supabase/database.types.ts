@@ -87,6 +87,7 @@ export type Database = {
           pos_y: number
           priority: number
           recurrence: string
+          recurrence_anchor: string | null
           title: string
           workspace_id: string
         }
@@ -100,6 +101,7 @@ export type Database = {
           pos_y?: number
           priority?: number
           recurrence?: string
+          recurrence_anchor?: string | null
           title: string
           workspace_id: string
         }
@@ -113,6 +115,7 @@ export type Database = {
           pos_y?: number
           priority?: number
           recurrence?: string
+          recurrence_anchor?: string | null
           title?: string
           workspace_id?: string
         }

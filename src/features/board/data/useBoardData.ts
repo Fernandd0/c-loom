@@ -5,7 +5,12 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { Board, Category, Task } from '@/app/types'
 import { completionUpdate } from '@/app/lib/task'
-import { BoardDataSource, BoardSnapshot, TaskPosition } from './types'
+import {
+  BoardDataSource,
+  BoardSnapshot,
+  CategoryChanges,
+  TaskPosition,
+} from './types'
 import { clearGuestData, localSource } from './localSource'
 import { createSupabaseSource } from './supabaseSource'
 
@@ -207,6 +212,31 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
       () => source.createCategory(category)
     )
 
+  const updateCategory = (categoryId: string, updates: CategoryChanges) =>
+    mutate(
+      (s) => ({
+        ...s,
+        categories: s.categories.map((c) =>
+          c.id === categoryId ? { ...c, ...updates } : c
+        ),
+      }),
+      () => source.updateCategory(categoryId, updates)
+    )
+
+  // Its tasks stay on the board without a category, as the database does.
+  const deleteCategory = (categoryId: string) =>
+    mutate(
+      (s) => ({
+        ...mapTasks(s, (tasks) =>
+          tasks.map((t) =>
+            t.categoryId === categoryId ? { ...t, categoryId: '' } : t
+          )
+        ),
+        categories: s.categories.filter((c) => c.id !== categoryId),
+      }),
+      () => source.deleteCategory(categoryId)
+    )
+
   // Position changes waiting to be saved, keyed by task id.
   const pendingPositions = useRef(new Map<string, TaskPosition>())
   const positionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -322,6 +352,8 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
     completeTask,
     deleteTask,
     createCategory,
+    updateCategory,
+    deleteCategory,
     setBoardTasks,
     guestImport:
       canImport && guestTaskCount > 0

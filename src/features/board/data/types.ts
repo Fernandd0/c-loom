@@ -1,5 +1,7 @@
 import { Board, Category, Task } from '@/app/types'
 
+export type CategoryChanges = Partial<Pick<Category, 'name' | 'color' | 'icon'>>
+
 export type TaskPosition = Pick<Task, 'id' | 'pos_x' | 'pos_y'>
 
 export interface BoardSnapshot {
@@ -20,6 +22,9 @@ export interface BoardDataSource {
   updateTask(taskId: string, updates: Partial<Task>): Promise<void>
   deleteTask(taskId: string): Promise<void>
   createCategory(category: Category): Promise<void>
+  updateCategory(categoryId: string, updates: CategoryChanges): Promise<void>
+  // Its tasks stay, without a category.
+  deleteCategory(categoryId: string): Promise<void>
   // Layout-only position updates. Tasks deleted in the meantime are skipped, not errors.
   savePositions(positions: TaskPosition[]): Promise<void>
   // Copies guest data into this source (Supabase only). Safe to retry: existing rows are kept.

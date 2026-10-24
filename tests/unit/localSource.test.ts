@@ -35,14 +35,10 @@ const legacyBoards = [
 ]
 
 describe('localSource', () => {
-  it('starts empty with the three default categories', async () => {
+  it('starts empty with the two default categories', async () => {
     const { boards, categories } = await localSource.load()
     expect(boards).toEqual([])
-    expect(categories.map((c) => c.name)).toEqual([
-      'Work',
-      'Personal',
-      'Urgent',
-    ])
+    expect(categories.map((c) => c.name)).toEqual(['Work', 'Personal'])
   })
 
   it('repairs guest data saved by older versions', async () => {
