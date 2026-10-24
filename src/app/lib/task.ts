@@ -1,4 +1,4 @@
-import { parseDeadline } from '@/lib/dates'
+import { addDays, addMonths, parseDeadline } from '@/lib/dates'
 import { Task, TaskRecurrence } from '../types'
 
 // Single source of truth for task size, priority and urgency.
@@ -48,4 +48,38 @@ export function getTaskDiameter(
 export function isTaskUrgent(task: Pick<Task, 'deadline'>, now = Date.now()) {
   const deadline = parseDeadline(task.deadline)
   return !!deadline && deadline.getTime() - now < URGENT_WITHIN_MS
+}
+
+const advance: Record<Exclude<TaskRecurrence, 'never'>, (d: Date) => Date> = {
+  daily: (d) => addDays(d, 1),
+  weekly: (d) => addDays(d, 7),
+  monthly: (d) => addMonths(d, 1),
+  yearly: (d) => addMonths(d, 12),
+}
+
+// First occurrence after the current deadline that is still in the future (missed ones are skipped).
+export function nextOccurrence(
+  deadline: Date,
+  recurrence: Exclude<TaskRecurrence, 'never'>,
+  now = new Date()
+) {
+  let next = advance[recurrence](deadline)
+  for (let i = 0; next <= now && i < 10_000; i++) {
+    next = advance[recurrence](next)
+  }
+  return next
+}
+
+// What completing a task does: recurring tasks move to their next due date and start
+// small again; everything else is deleted (returns null).
+export function completionUpdate(
+  task: Pick<Task, 'deadline' | 'recurrence'>,
+  now = new Date()
+): Partial<Task> | null {
+  const deadline = parseDeadline(task.deadline)
+  if (task.recurrence === 'never' || !deadline) return null
+  return {
+    deadline: nextOccurrence(deadline, task.recurrence, now).toISOString(),
+    createdAt: now.toISOString(),
+  }
 }

@@ -53,6 +53,21 @@ export function addDays(date: Date, days: number) {
   return next
 }
 
+// Same local time, `months` later; the day is clamped to the month's length (Jan 31 + 1 month = Feb 28/29).
+export function addMonths(date: Date, months: number) {
+  const next = new Date(date)
+  const day = next.getDate()
+  next.setDate(1)
+  next.setMonth(next.getMonth() + months)
+  const daysInMonth = new Date(
+    next.getFullYear(),
+    next.getMonth() + 1,
+    0
+  ).getDate()
+  next.setDate(Math.min(day, daysInMonth))
+  return next
+}
+
 // Whole local calendar days from `now` to `date` (0 = today, 1 = tomorrow, -1 = yesterday).
 export function calendarDaysFrom(date: Date, now = new Date()) {
   const startOf = (d: Date) =>
