@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AlignLeft, Calendar, Flag, Repeat, Tag } from 'lucide-react'
+import { AlignLeft, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -13,16 +13,18 @@ import {
 } from '@/components/ui/dialog'
 import { buildDeadline } from '@/lib/dates'
 import { Category, NewTaskInput, TaskRecurrence } from '../types'
-import { PRIORITY_LEVELS, RECURRENCE_OPTIONS } from '../lib/task'
+import { PRIORITY_LEVELS } from '../lib/task'
 import { useStickyState } from '../hooks/useStickyState'
 import { GlassCard } from './GlassCard'
-import { ChipGroup, FieldLabel } from './task-form/ChipGroup'
-import { CategoryField } from './task-form/CategoryField'
-import { DeadlineField, DeadlineValue } from './task-form/DeadlineField'
+import { DeadlineValue } from './task-form/DeadlineField'
+import { TaskFields, TaskFieldsValue } from './task-form/TaskFields'
 import { Kbd } from './Kbd'
+import { parseQuickAdd } from '@/features/board/lib/quickAdd'
 
 interface AddTaskDialogProps {
   categories: Category[]
+  // Starts new tasks in this category (e.g. the one the board is focused on).
+  preferredCategoryId?: string
   onAddTask: (input: NewTaskInput) => void
   onAddCategory: (
     name: string,
@@ -36,6 +38,7 @@ const KBD = 'px-1.5 py-0 text-[11px] shadow-none'
 
 export function AddTaskDialog({
   categories,
+  preferredCategoryId = '',
   onAddTask,
   onAddCategory,
 }: AddTaskDialogProps) {
@@ -47,19 +50,39 @@ export function AddTaskDialog({
   const [deadline, setDeadline] = useState<DeadlineValue>(EMPTY_DEADLINE)
   const [recurrence, setRecurrence] = useState<TaskRecurrence>('never')
   const [priority, setPriority] = useState<number>(PRIORITY_LEVELS[0].value)
+  // Fields picked by hand win over what's typed in the title.
+  const [touched, setTouched] = useState({ due: false, priority: false })
+  const [plainText, setPlainText] = useState(false)
   const [lastCategoryId, setLastCategoryId] = useStickyState(
     '',
     'c-loom-last-category'
   )
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Default to the last category used, so a task can be created by typing a title and pressing Enter.
-  const exists = (id: string) => categories.some((c) => c.id === id)
-  const categoryId = exists(pickedCategoryId)
-    ? pickedCategoryId
-    : exists(lastCategoryId)
-      ? lastCategoryId
-      : (categories[0]?.id ?? '')
+  // "Pay rent tomorrow 9am #personal !high" fills the fields as you type.
+  const parsed = parseQuickAdd(title, categories)
+  const quick = plainText ? { title: title.trim(), matched: [] } : parsed
+
+  // A picked category wins, then a #tag, then the focused category, then the last one
+  // used, so a task can be created by typing a title and pressing Enter.
+  const categoryId =
+    [
+      pickedCategoryId,
+      quick.categoryId,
+      preferredCategoryId,
+      lastCategoryId,
+    ].find((id) => categories.some((c) => c.id === id)) ??
+    categories[0]?.id ??
+    ''
+  const useTyped = !touched.due && !!quick.date
+  const fields: TaskFieldsValue = {
+    categoryId,
+    deadline: useTyped
+      ? { date: quick.date!, time: quick.time ?? '' }
+      : deadline,
+    recurrence: useTyped ? (quick.recurrence ?? recurrence) : recurrence,
+    priority: touched.priority ? priority : (quick.priority ?? priority),
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,22 +106,39 @@ export function AddTaskDialog({
     setDeadline(EMPTY_DEADLINE)
     setRecurrence('never')
     setPriority(PRIORITY_LEVELS[0].value)
+    setTouched({ due: false, priority: false })
+    setPlainText(false)
   }
 
-  const canSubmit = !!title.trim() && !!categoryId
+  const canSubmit = !!quick.title && !!categoryId
+
+  const handleFieldsChange = (changes: Partial<TaskFieldsValue>) => {
+    if (changes.categoryId !== undefined)
+      setPickedCategoryId(changes.categoryId)
+    if (changes.deadline || changes.recurrence) {
+      // Start from what's shown, which may have come from the title.
+      setDeadline(changes.deadline ?? fields.deadline)
+      setRecurrence(changes.recurrence ?? fields.recurrence)
+      setTouched((t) => ({ ...t, due: true }))
+    }
+    if (changes.priority !== undefined) {
+      setPriority(changes.priority)
+      setTouched((t) => ({ ...t, priority: true }))
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
 
     onAddTask({
-      title: title.trim(),
+      title: quick.title,
       categoryId,
       description: description.trim(),
-      deadline: buildDeadline(deadline.date, deadline.time),
+      deadline: buildDeadline(fields.deadline.date, fields.deadline.time),
       // Repeating only makes sense relative to a due date.
-      recurrence: deadline.date ? recurrence : 'never',
-      priority,
+      recurrence: fields.deadline.date ? fields.recurrence : 'never',
+      priority: fields.priority,
     })
     setLastCategoryId(categoryId)
     setOpen(false)
@@ -128,7 +168,7 @@ export function AddTaskDialog({
       <DialogContent className="w-[calc(100vw-2rem)] overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl">
         <DialogTitle className="sr-only">New task</DialogTitle>
         <DialogDescription className="sr-only">
-          Name the task, then optionally pick a category, due date, repeat and
+          Name the task, then optionally change its category, due date and
           priority.
         </DialogDescription>
         <form
@@ -143,7 +183,7 @@ export function AddTaskDialog({
           className="relative w-full"
         >
           <GlassCard className="flex max-h-[85vh] flex-col overflow-hidden">
-            <div className="flex flex-col gap-5 overflow-y-auto p-5 sm:p-6">
+            <div className="flex flex-col gap-4 overflow-y-auto p-5 sm:p-6">
               {/* Title */}
               <div>
                 <Input
@@ -155,6 +195,33 @@ export function AddTaskDialog({
                   className="h-auto border-none bg-transparent px-0 py-1 text-xl font-semibold shadow-none placeholder:text-[#C7C7CC] focus:ring-0 sm:text-2xl"
                   autoFocus
                 />
+                {parsed.matched.length > 0 && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-[#8E8E93]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {plainText ? (
+                      <span>Kept as text</span>
+                    ) : (
+                      <>
+                        <span>Read</span>
+                        {parsed.matched.map((word) => (
+                          <span
+                            key={word}
+                            className="rounded-md bg-[#F2F2F7] px-1.5 py-0.5 font-medium text-[#3C3C43]"
+                          >
+                            {word}
+                          </span>
+                        ))}
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setPlainText((v) => !v)}
+                      className="font-semibold text-[#007AFF] hover:underline"
+                    >
+                      {plainText ? 'Read it again' : 'Keep as text'}
+                    </button>
+                  </div>
+                )}
                 {showDescription ? (
                   <textarea
                     value={description}
@@ -177,47 +244,18 @@ export function AddTaskDialog({
                 )}
               </div>
 
-              <div className="h-px bg-[#E5E5EA]" />
-
-              <div>
-                <FieldLabel icon={Tag}>Category</FieldLabel>
-                <CategoryField
-                  categories={categories}
-                  value={categoryId}
-                  onChange={setPickedCategoryId}
-                  onCreate={onAddCategory}
-                />
-              </div>
-
-              <div>
-                <FieldLabel icon={Calendar}>Due</FieldLabel>
-                <DeadlineField value={deadline} onChange={setDeadline} />
-              </div>
-
-              {deadline.date && (
-                <div className="animate-in fade-in duration-150">
-                  <FieldLabel icon={Repeat}>Repeat</FieldLabel>
-                  <ChipGroup
-                    label="Repeat"
-                    options={RECURRENCE_OPTIONS}
-                    value={recurrence}
-                    onChange={setRecurrence}
-                  />
-                </div>
-              )}
-
-              <div>
-                <FieldLabel icon={Flag}>Priority</FieldLabel>
-                <ChipGroup
-                  label="Priority"
-                  options={PRIORITY_LEVELS}
-                  value={priority}
-                  onChange={setPriority}
-                />
-                <p className="mt-2 text-[12px] text-[#8E8E93]">
-                  Higher priority starts as a bigger circle.
+              <TaskFields
+                value={fields}
+                onChange={handleFieldsChange}
+                categories={categories}
+                onCreateCategory={onAddCategory}
+              />
+              {!title && (
+                <p className="-mt-1 text-[12px] text-[#8E8E93]">
+                  Tip: type “tomorrow 9am #work !high every week” in the title
+                  to fill these in.
                 </p>
-              </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-[#E5E5EA] bg-[#FAFAFA] px-5 py-3 sm:px-6">
