@@ -9,11 +9,15 @@ export interface Task {
   pos_y: number // DB column
   categoryId: string
   workspaceId: string
-  completed: boolean
   deadline?: string
   recurrence: TaskRecurrence
   priority?: number // 0 (normal) to 10 (highest priority)
 }
+
+export type NewTaskInput = Pick<
+  Task,
+  'title' | 'categoryId' | 'description' | 'deadline' | 'recurrence' | 'priority'
+>
 
 export interface Category {
   id: string

@@ -3,13 +3,37 @@
 import * as React from 'react'
 import { Task, Category, TaskRecurrence } from '../types'
 import { GlassCard } from './GlassCard'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Trash2, Edit2, Save, X, Calendar, Repeat } from 'lucide-react'
+import {
+  AlignLeft,
+  Calendar,
+  Clock,
+  Edit2,
+  Flag,
+  Repeat,
+  Save,
+  Tag,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import {
+  buildDeadline,
+  formatAge,
+  formatDeadline,
+  isOverdue,
+  parseDeadline,
+  splitDeadline,
+} from '@/lib/dates'
+import { PRIORITY_LEVELS, RECURRENCE_OPTIONS, priorityLevel } from '../lib/task'
+import { ChipGroup, FieldLabel } from './task-form/ChipGroup'
+import { CategoryField } from './task-form/CategoryField'
+import { DeadlineField, DeadlineValue } from './task-form/DeadlineField'
 
 interface TaskDetailDialogProps {
-  task: Task | null
+  task: Task
   category?: Category
   categories: Category[]
   open: boolean
@@ -17,6 +41,24 @@ interface TaskDetailDialogProps {
   onDelete: (id: string) => void
   onUpdate: (id: string, updates: Partial<Task>) => void
 }
+
+interface Draft {
+  title: string
+  description: string
+  categoryId: string
+  deadline: DeadlineValue
+  recurrence: TaskRecurrence
+  priority: number
+}
+
+const draftFrom = (task: Task): Draft => ({
+  title: task.title,
+  description: task.description ?? '',
+  categoryId: task.categoryId,
+  deadline: splitDeadline(task.deadline),
+  recurrence: task.recurrence,
+  priority: priorityLevel(task.priority).value,
+})
 
 export function TaskDetailDialog({
   task,
@@ -27,85 +69,64 @@ export function TaskDetailDialog({
   onDelete,
   onUpdate,
 }: TaskDetailDialogProps) {
-  const [isEditing, setIsEditing] = React.useState(false)
-  const [editedTitle, setEditedTitle] = React.useState('')
-  const [editedCategoryId, setEditedCategoryId] = React.useState('')
-  const [editedDeadline, setEditedDeadline] = React.useState('')
-  const [editedRecurrence, setEditedRecurrence] =
-    React.useState<TaskRecurrence>('never')
-  const [editedDescription, setEditedDescription] = React.useState('')
-  const [hoursOld, setHoursOld] = React.useState<string>('0.0')
+  const [draft, setDraft] = React.useState<Draft | null>(null)
+  const isEditing = draft !== null
 
-  React.useEffect(() => {
-    if (task) {
-      const diff = Date.now() - new Date(task.createdAt).getTime()
-      setHoursOld((diff / (1000 * 60 * 60)).toFixed(1))
-
-      // Initialize edit state
-      setEditedTitle(task.title)
-      setEditedCategoryId(task.categoryId)
-      setEditedDeadline(
-        task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : ''
-      )
-      setEditedRecurrence(task.recurrence)
-      setEditedDescription(task.description || '')
-    }
-  }, [task, open])
-
-  if (!task) return null
+  const update = (changes: Partial<Draft>) =>
+    setDraft((d) => (d ? { ...d, ...changes } : d))
 
   const handleSave = () => {
-    const updates: Partial<Task> = {
-      title: editedTitle.trim(),
-      categoryId: editedCategoryId,
-      deadline: editedDeadline
-        ? new Date(editedDeadline).toISOString()
-        : undefined,
-      recurrence: editedRecurrence,
-      description: editedDescription.trim(),
-    }
-
-    onUpdate(task.id, updates)
-    setIsEditing(false)
+    if (!draft || !draft.title.trim()) return
+    onUpdate(task.id, {
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      categoryId: draft.categoryId,
+      deadline: buildDeadline(draft.deadline.date, draft.deadline.time),
+      recurrence: draft.deadline.date ? draft.recurrence : 'never',
+      priority: draft.priority,
+    })
+    setDraft(null)
   }
 
-  const handleCancel = () => {
-    // Reset to original values
-    setEditedTitle(task.title)
-    setEditedCategoryId(task.categoryId)
-    setEditedDeadline(
-      task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : ''
-    )
-    setEditedRecurrence(task.recurrence)
-    setEditedDescription(task.description || '')
-    setIsEditing(false)
-  }
-
-  const selectedCategory = categories.find(
-    (c) => c.id === (isEditing ? editedCategoryId : task.categoryId)
-  )
+  const shownCategory = isEditing
+    ? categories.find((c) => c.id === draft.categoryId)
+    : category
+  const deadline = parseDeadline(task.deadline)
+  const overdue = !!deadline && isOverdue(deadline)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setDraft(null)
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-lg">
-        <GlassCard className="p-6 sm:p-8">
+        <GlassCard className="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
           <div className="space-y-6">
-            {/* Header with Edit/Save buttons */}
             <div className="flex items-start justify-between gap-4">
               {isEditing ? (
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="border-2 border-indigo-200 text-3xl font-bold focus:border-indigo-500 sm:text-4xl"
-                  style={{ color: selectedCategory?.color || '#374151' }}
-                />
+                <>
+                  <DialogTitle className="sr-only">Edit task</DialogTitle>
+                  <Input
+                    value={draft.title}
+                    onChange={(e) => update({ title: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                    aria-label="Task title"
+                    maxLength={500}
+                    autoFocus
+                    className="text-2xl font-bold sm:text-3xl"
+                    style={{ color: shownCategory?.color || '#374151' }}
+                  />
+                </>
               ) : (
-                <h2
+                <DialogTitle
                   className="flex-1 text-3xl font-bold tracking-tight break-words sm:text-4xl"
-                  style={{ color: selectedCategory?.color || '#374151' }}
+                  style={{ color: shownCategory?.color || '#374151' }}
                 >
                   {task.title}
-                </h2>
+                </DialogTitle>
               )}
 
               <div className="flex gap-2">
@@ -113,22 +134,25 @@ export function TaskDetailDialog({
                   <>
                     <Button
                       onClick={handleSave}
-                      disabled={!editedTitle.trim()}
-                      className="h-9 w-9 rounded-md bg-indigo-500 p-0 text-white shadow-sm transition-colors hover:bg-indigo-600"
+                      disabled={!draft.title.trim()}
+                      aria-label="Save"
+                      className="h-9 w-9 rounded-md bg-[#1C1C1E] p-0 text-white shadow-sm hover:bg-[#2C2C2E]"
                     >
                       <Save className="h-4 w-4" />
                     </Button>
                     <Button
-                      onClick={handleCancel}
-                      className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
+                      onClick={() => setDraft(null)}
+                      aria-label="Cancel"
+                      className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm hover:bg-slate-50"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </>
                 ) : (
                   <Button
-                    onClick={() => setIsEditing(true)}
-                    className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
+                    onClick={() => setDraft(draftFrom(task))}
+                    aria-label="Edit"
+                    className="h-9 w-9 rounded-md border border-slate-200 bg-white p-0 text-slate-600 shadow-sm hover:bg-slate-50"
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
@@ -136,128 +160,112 @@ export function TaskDetailDialog({
               </div>
             </div>
 
-            <div className="space-y-3">
-              {/* Category */}
-              <div className="flex items-center gap-3">
-                <span className="w-24 text-sm font-medium text-slate-500">
-                  Category
-                </span>
-                {isEditing ? (
-                  <select
-                    value={editedCategoryId}
-                    onChange={(e) => setEditedCategoryId(e.target.value)}
-                    className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : selectedCategory ? (
-                  <div
-                    className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-sm font-medium transition-colors"
-                    style={{
-                      backgroundColor: selectedCategory.color
-                        ? `${selectedCategory.color}20`
-                        : '#f1f5f9',
-                      color: selectedCategory.color || '#475569',
-                    }}
-                  >
-                    <span>{selectedCategory.name}</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-slate-400 italic">
-                    No category
-                  </span>
-                )}
-              </div>
-
-              {/* Created */}
-              <div className="flex items-center gap-3">
-                <span className="w-24 text-sm font-medium text-slate-500">
-                  Created
-                </span>
-                <span className="text-sm text-slate-700">
-                  {hoursOld} hours ago
-                </span>
-              </div>
-
-              {/* Due Date */}
-              <div className="flex items-center gap-3">
-                <span className="flex w-24 items-center gap-1 text-sm font-medium text-slate-500">
-                  <Calendar className="h-3 w-3" />
-                  Due Date
-                </span>
-                {isEditing ? (
-                  <input
-                    type="datetime-local"
-                    value={editedDeadline}
-                    onChange={(e) => setEditedDeadline(e.target.value)}
-                    className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            {isEditing ? (
+              <div className="space-y-5">
+                <div>
+                  <FieldLabel icon={AlignLeft}>Details</FieldLabel>
+                  <textarea
+                    value={draft.description}
+                    onChange={(e) => update({ description: e.target.value })}
+                    placeholder="Add details…"
+                    rows={3}
+                    className="w-full rounded-xl border border-[#D1D1D6] bg-white px-3 py-2 text-sm outline-none focus:border-[#C7C7CC] focus:ring-4 focus:ring-[#D1D1D6]/30"
                   />
-                ) : task.deadline ? (
-                  <span className="text-sm text-slate-700">
-                    {new Date(task.deadline).toLocaleString()}
-                  </span>
-                ) : (
-                  <span className="text-sm text-slate-400 italic">
-                    No deadline
-                  </span>
-                )}
-              </div>
-
-              {/* Recurrence */}
-              <div className="flex items-center gap-3">
-                <span className="flex w-24 items-center gap-1 text-sm font-medium text-slate-500">
-                  <Repeat className="h-3 w-3" />
-                  Recurrence
-                </span>
-                {isEditing ? (
-                  <select
-                    value={editedRecurrence}
-                    onChange={(e) =>
-                      setEditedRecurrence(e.target.value as TaskRecurrence)
-                    }
-                    className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <option value="never">Never</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                ) : (
-                  <span className="text-sm text-slate-700 capitalize">
-                    {task.recurrence}
-                  </span>
-                )}
-              </div>
-
-              {/* Description */}
-              {(isEditing || task.description) && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-slate-500">
-                    Description
-                  </span>
-                  {isEditing ? (
-                    <textarea
-                      value={editedDescription}
-                      onChange={(e) => setEditedDescription(e.target.value)}
-                      placeholder="Add a description..."
-                      rows={3}
-                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                    />
-                  ) : (
-                    <p className="text-sm whitespace-pre-wrap text-slate-700">
-                      {task.description}
-                    </p>
-                  )}
                 </div>
-              )}
-            </div>
+                <div>
+                  <FieldLabel icon={Tag}>Category</FieldLabel>
+                  <CategoryField
+                    categories={categories}
+                    value={draft.categoryId}
+                    onChange={(categoryId) => update({ categoryId })}
+                  />
+                </div>
+                <div>
+                  <FieldLabel icon={Calendar}>Due</FieldLabel>
+                  <DeadlineField
+                    value={draft.deadline}
+                    onChange={(deadline) => update({ deadline })}
+                  />
+                </div>
+                {draft.deadline.date && (
+                  <div>
+                    <FieldLabel icon={Repeat}>Repeat</FieldLabel>
+                    <ChipGroup
+                      label="Repeat"
+                      options={RECURRENCE_OPTIONS}
+                      value={draft.recurrence}
+                      onChange={(recurrence) => update({ recurrence })}
+                    />
+                  </div>
+                )}
+                <div>
+                  <FieldLabel icon={Flag}>Priority</FieldLabel>
+                  <ChipGroup
+                    label="Priority"
+                    options={PRIORITY_LEVELS}
+                    value={draft.priority}
+                    onChange={(priority) => update({ priority })}
+                  />
+                </div>
+              </div>
+            ) : (
+              <dl className="space-y-3 text-sm">
+                <Row icon={Tag} label="Category">
+                  {category ? (
+                    <span
+                      className="inline-flex items-center rounded-md px-2 py-0.5 font-medium"
+                      style={{
+                        backgroundColor: `${category.color}20`,
+                        color: category.color,
+                      }}
+                    >
+                      {category.name}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 italic">No category</span>
+                  )}
+                </Row>
+                <Row icon={Calendar} label="Due">
+                  {deadline ? (
+                    <span
+                      className={cn(
+                        overdue
+                          ? 'font-medium text-[#FF3B30]'
+                          : 'text-slate-700'
+                      )}
+                    >
+                      {formatDeadline(deadline)}
+                      {overdue && ' · overdue'}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 italic">No due date</span>
+                  )}
+                </Row>
+                {task.recurrence !== 'never' && (
+                  <Row icon={Repeat} label="Repeat">
+                    <span className="text-slate-700 capitalize">
+                      {task.recurrence}
+                    </span>
+                  </Row>
+                )}
+                <Row icon={Flag} label="Priority">
+                  <span className="text-slate-700">
+                    {priorityLevel(task.priority).label}
+                  </span>
+                </Row>
+                <Row icon={Clock} label="Created">
+                  <span className="text-slate-700">
+                    {formatAge(task.createdAt)}
+                  </span>
+                </Row>
+                {task.description && (
+                  <p className="pt-1 whitespace-pre-wrap text-slate-700">
+                    {task.description}
+                  </p>
+                )}
+              </dl>
+            )}
 
-            {/* Delete Button */}
             {!isEditing && (
               <div className="flex justify-start border-t border-slate-200 pt-4">
                 <Button
@@ -276,5 +284,25 @@ export function TaskDetailDialog({
         </GlassCard>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function Row({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <dt className="flex w-24 shrink-0 items-center gap-1.5 font-medium text-slate-500">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </dt>
+      <dd>{children}</dd>
+    </div>
   )
 }

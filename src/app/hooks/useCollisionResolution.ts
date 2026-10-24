@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Task } from '../types'
+import { getTaskDiameter } from '../lib/task'
 
 interface CollisionConfig {
   containerWidth: number
@@ -7,12 +8,7 @@ interface CollisionConfig {
   padding: number
 }
 
-const getTaskRadius = (createdAt: string) => {
-  const created = new Date(createdAt).getTime()
-  const hoursOld = (Date.now() - created) / (1000 * 60 * 60)
-  const diameter = Math.min(300, 80 + hoursOld * 5)
-  return diameter / 2
-}
+const getTaskRadius = (task: Task) => getTaskDiameter(task) / 2
 
 export function useCollisionResolution(
   tasks: Task[],
@@ -33,24 +29,27 @@ export function useCollisionResolution(
         const t1 = newTasks[j]
         if (t1.pos_x === undefined || t1.pos_y === undefined) continue
 
-        const r1 = getTaskRadius(t1.createdAt)
-
+        const r1 = getTaskRadius(t1)
 
         const px = (t1.pos_x / 100) * config.containerWidth
         const py = (t1.pos_y / 100) * config.containerHeight
         let nPx = px
         let nPy = py
 
-
-        nPx = Math.max(r1 + config.padding, Math.min(config.containerWidth - r1 - config.padding, nPx))
-        nPy = Math.max(r1 + config.padding, Math.min(config.containerHeight - r1 - config.padding, nPy))
-
+        nPx = Math.max(
+          r1 + config.padding,
+          Math.min(config.containerWidth - r1 - config.padding, nPx)
+        )
+        nPy = Math.max(
+          r1 + config.padding,
+          Math.min(config.containerHeight - r1 - config.padding, nPy)
+        )
 
         for (let k = j + 1; k < newTasks.length; k++) {
           const t2 = newTasks[k]
           if (t2.pos_x === undefined || t2.pos_y === undefined) continue
 
-          const r2 = getTaskRadius(t2.createdAt)
+          const r2 = getTaskRadius(t2)
           const px2 = (t2.pos_x / 100) * config.containerWidth
           const py2 = (t2.pos_y / 100) * config.containerHeight
 
@@ -66,30 +65,31 @@ export function useCollisionResolution(
             const angle = Math.atan2(dy, dx)
             const force = overlap / 2
 
-
             const fdX = distance === 0 ? 1 : Math.cos(angle) * force
             const fdY = distance === 0 ? 0 : Math.sin(angle) * force
 
             nPx -= fdX
             nPy -= fdY
-            
 
             const nPx2 = px2 + fdX
             const nPy2 = py2 + fdY
-            
+
             newTasks[k] = {
-                ...t2,
-                pos_x: (nPx2 / config.containerWidth) * 100,
-                pos_y: (nPy2 / config.containerHeight) * 100
+              ...t2,
+              pos_x: (nPx2 / config.containerWidth) * 100,
+              pos_y: (nPy2 / config.containerHeight) * 100,
             }
           }
         }
 
-
         if (nPx !== px || nPy !== py) {
           hasChanges = true
-          t1.pos_x = (nPx / config.containerWidth) * 100
-          t1.pos_y = (nPy / config.containerHeight) * 100
+          // Replace instead of mutating: t1 may still be the object held in React state.
+          newTasks[j] = {
+            ...t1,
+            pos_x: (nPx / config.containerWidth) * 100,
+            pos_y: (nPy / config.containerHeight) * 100,
+          }
         }
       }
     }
@@ -97,11 +97,16 @@ export function useCollisionResolution(
     if (hasChanges) {
       isResolvingRef.current = true
       const timeoutId = setTimeout(() => {
-          setTasks(newTasks)
-          isResolvingRef.current = false
+        setTasks(newTasks)
+        isResolvingRef.current = false
       }, 32)
       return () => clearTimeout(timeoutId)
     }
-
-  }, [tasks, setTasks, config.containerWidth, config.containerHeight, config.padding])
+  }, [
+    tasks,
+    setTasks,
+    config.containerWidth,
+    config.containerHeight,
+    config.padding,
+  ])
 }

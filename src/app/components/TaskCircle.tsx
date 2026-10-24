@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { AlertOctagon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Task } from '../types'
+import { getTaskDiameter, isTaskUrgent } from '../lib/task'
 
 interface TaskCircleProps {
   task: Task
@@ -25,43 +26,14 @@ export default function TaskCircle({
   useEffect(() => {
     const calcTime = () => {
       const now = Date.now()
-      const created = new Date(task.createdAt).getTime()
-      const diff = now - created
-      const hours = diff / (1000 * 60 * 60)
-
-      let newStatus: 'chill' | 'urgent' = 'chill'
-
-      // Priority affects base size: each level adds 100px (0=80px, 1=180px, 2=280px, 3=380px, etc.)
-      const priorityNum = task.priority ?? 0
-      const baseSize = 80 + priorityNum * 100
-      let newSize = baseSize
-
-      if (task.deadline) {
-        const deadline = new Date(task.deadline).getTime()
-        const hoursLeft = (deadline - now) / (1000 * 60 * 60)
-
-        // Only show danger icon when due date is today (within 24 hours)
-        if (hoursLeft < 24) {
-          newStatus = 'urgent'
-        } else {
-          newStatus = 'chill'
-        }
-        // Circle grows over time from base size
-        newSize = Math.min(400, baseSize + hours * 5)
-      } else {
-        // Without deadline, circle just grows over time from base size
-        newStatus = 'chill'
-        newSize = Math.min(300, baseSize + hours * 5)
-      }
-
-      setStatus(newStatus)
-      setSize(newSize)
+      setStatus(isTaskUrgent(task, now) ? 'urgent' : 'chill')
+      setSize(getTaskDiameter(task, now))
     }
 
     calcTime()
     const interval = setInterval(calcTime, 60000)
     return () => clearInterval(interval)
-  }, [task.createdAt, task.deadline, task.priority])
+  }, [task])
 
   useEffect(() => {
     if (clickCount === 0) return

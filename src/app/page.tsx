@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useStickyState } from './hooks/useStickyState'
 import { useCollisionResolution } from './hooks/useCollisionResolution'
 import TaskCircle from './components/TaskCircle'
-import { Task, Category, Board, TaskRecurrence } from './types'
+import { Task, Category, Board, NewTaskInput } from './types'
 import { AddTaskDialog } from './components/AddTaskDialog'
 import { TaskDetailDialog } from './components/TaskDetailDialog'
 import { Sidebar } from './components/Sidebar'
@@ -58,7 +58,6 @@ export default function Home() {
     deleteTask: deleteRemoteTask,
     createCategory: createRemoteCategory,
     setBoards: setRemoteBoards,
-    syncProfile,
   } = useSupabaseData(user)
 
   const {
@@ -78,7 +77,7 @@ export default function Home() {
   // 3. Combined State
   const isLoaded = user ? !isRemoteLoading : isLocalLoaded
   const boards = user ? remoteBoards : localBoards
-  const categories = user ? remoteCategories : localCategories
+  const allCategories = user ? remoteCategories : localCategories
 
   // Board Selection State
   const [currentBoardId, setCurrentBoardId] = useStickyState<string>(
@@ -86,7 +85,7 @@ export default function Home() {
     'c-loom-current-board'
   )
 
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
   // Auto-select board logic
@@ -100,21 +99,24 @@ export default function Home() {
     }
   }, [isLoaded, boards, currentBoardId, setCurrentBoardId])
 
-  const syncedUserIdRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (user?.id && syncedUserIdRef.current !== user.id) {
-      syncedUserIdRef.current = user.id
-      syncProfile(user)
-    }
-  }, [user?.id, syncProfile])
-
   const currentBoard = useMemo(
     () => boards.find((b) => b.id === currentBoardId) || boards[0],
     [boards, currentBoardId]
   )
 
+  // Categories belong to a workspace; guest defaults use the 'default' workspace.
+  const categories = useMemo(
+    () =>
+      allCategories.filter(
+        (c) => c.workspaceId === currentBoard?.id || c.workspaceId === 'default'
+      ),
+    [allCategories, currentBoard?.id]
+  )
+
   const currentTasks = useMemo(() => currentBoard?.tasks || [], [currentBoard])
+
+  // Look the task up on every render so the detail dialog reflects saved edits.
+  const selectedTask = currentTasks.find((t) => t.id === selectedTaskId)
 
   const setTasks = (newTasksUpdater: Task[] | ((prev: Task[]) => Task[])) => {
     if (!currentBoard) return
@@ -173,7 +175,6 @@ export default function Home() {
               ? new Date(task.createdAt).toISOString()
               : task.createdAt,
           workspaceId: currentBoardId,
-          completed: false, // Default
         }
       }
       return task
@@ -198,28 +199,19 @@ export default function Home() {
     }
   }, [isLoaded, currentBoardId, currentTasks.length, user, updateRemoteTask])
 
-  const addTask = async (
-    title: string,
-    categoryId: string,
-    dueDate?: string,
-    recurrence: TaskRecurrence = 'never',
-    priority?: number
-  ) => {
-    if (!title.trim() || !currentBoard) return
+  const addTask = async (input: NewTaskInput) => {
+    if (!input.title.trim() || !currentBoard) return
 
     const newTask: Task = {
+      ...input,
       id: crypto.randomUUID(),
-      title: title.trim(),
+      title: input.title.trim(),
+      description: input.description ?? '',
+      priority: input.priority ?? 0,
       createdAt: new Date().toISOString(),
       pos_x: Math.random() * 80 + 10,
       pos_y: Math.random() * 60 + 20,
-      categoryId,
-      workspaceId: currentBoardId,
-      completed: false,
-      deadline: dueDate || undefined,
-      description: '',
-      recurrence,
-      priority: priority ?? 0,
+      workspaceId: currentBoard.id,
     }
 
     if (user) {
@@ -229,29 +221,29 @@ export default function Home() {
     }
   }
 
+  // Returns the new category's id so the caller can select it right away.
   const addCategory = async (name: string, color: string, icon?: string) => {
-    if (!currentBoard) return
+    if (!currentBoard) return undefined
 
-    const newCategory: Omit<Category, 'workspaceId'> = {
+    const newCategory: Category = {
       id: crypto.randomUUID(),
       name,
       color,
       icon,
+      workspaceId: currentBoard.id,
     }
 
     if (user) {
-      await createRemoteCategory({
-        ...newCategory,
-        workspaceId: currentBoardId,
-      })
+      await createRemoteCategory(newCategory)
     } else {
-      createLocalCategory({ ...newCategory, workspaceId: currentBoardId })
+      await createLocalCategory(newCategory)
     }
+    return newCategory.id
   }
 
   const completeTask = async (id: string) => {
     if (user) {
-      await deleteRemoteTask(id, currentBoardId)
+      await deleteRemoteTask(id, currentBoard?.id ?? currentBoardId)
     } else {
       deleteLocalTask(id)
     }
@@ -347,7 +339,7 @@ export default function Home() {
                     task={task}
                     color={category?.color}
                     onComplete={completeTask}
-                    onSelect={(t) => setSelectedTask(t)}
+                    onSelect={(t) => setSelectedTaskId(t.id)}
                   />
                 </div>
               )
@@ -362,7 +354,7 @@ export default function Home() {
               )}
               categories={categories}
               open={!!selectedTask}
-              onOpenChange={(open) => !open && setSelectedTask(null)}
+              onOpenChange={(open) => !open && setSelectedTaskId(null)}
               onDelete={completeTask}
               onUpdate={updateTask}
             />
@@ -386,7 +378,6 @@ export default function Home() {
             <div className="relative">
               <AddTaskDialog
                 categories={categories}
-                currentBoard={currentBoard}
                 onAddTask={addTask}
                 onAddCategory={addCategory}
               />
