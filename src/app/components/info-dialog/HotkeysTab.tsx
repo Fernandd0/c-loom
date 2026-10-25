@@ -12,6 +12,8 @@ export function HotkeysTab() {
         <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <span className="text-sm font-medium text-[#1C1C1E]">New Task</span>
           <div className="flex items-center gap-1">
+            <Kbd>N</Kbd>
+            <span className="text-xs text-[#8E8E93]">or</span>
             <Kbd>⌘</Kbd>
             <span className="text-xs text-[#8E8E93]">+</span>
             <Kbd>Enter</Kbd>

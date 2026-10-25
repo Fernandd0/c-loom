@@ -292,3 +292,13 @@ test('"Keep as text" turns title reading off', async ({ page }) => {
   const task = (await stored(page, 'Review notes tomorrow'))!
   expect(task.deadline).toBeUndefined()
 })
+
+test('N opens the new task dialog, but not while typing', async ({ page }) => {
+  await page.keyboard.press('n')
+  const title = page.getByLabel('Task title')
+  await expect(title).toBeFocused()
+  await title.fill('Not again')
+  await title.press('n')
+  await expect(title).toHaveValue('Not againn')
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+})
