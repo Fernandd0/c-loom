@@ -26,7 +26,33 @@
   --hint: #a1a1aa;
 }
 
-/* Galaxy: deep space, glowing planets and a nebula-violet accent. */
+/* Dark: the light theme's calm, in solid neutral grays. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --background: #111113;
+  --foreground: #f5f5f7;
+  --page: #111113;
+  --surface: #1c1c1e;
+  --surface-2: rgb(255 255 255 / 0.06);
+  --surface-3: rgb(255 255 255 / 0.12);
+  --fg: #f5f5f7;
+  --fg-2: #d1d1d6;
+  --fg-3: #8e8e93;
+  --fg-4: #48484a;
+  --line: rgb(255 255 255 / 0.1);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --hairline: rgb(255 255 255 / 0.08);
+  --hover: rgb(255 255 255 / 0.06);
+  --ink: #48484a;
+  --ink-hover: #5a5a5e;
+  --glass: rgb(28 28 30 / 0.78);
+  --glass-strong: rgb(22 22 24 / 0.95);
+  --accent: #0a84ff;
+  --dot-soft: rgb(255 255 255 / 0.32);
+  --hint: #6e6e73;
+}
+
+/* Galaxy: deep space, glowing planets and a dusty-lavender accent. */
 :root[data-theme='galaxy'] {
   color-scheme: dark;
   --background: #05060f;
@@ -43,8 +69,8 @@
   --line-strong: rgb(255 255 255 / 0.16);
   --hairline: rgb(255 255 255 / 0.08);
   --hover: rgb(255 255 255 / 0.06);
-  --ink: #7c5cff;
-  --ink-hover: #8f73ff;
+  --ink: #8a7bb8;
+  --ink-hover: #9a8cc6;
   --glass: rgb(20 23 42 / 0.72);
   --glass-strong: rgb(14 16 30 / 0.94);
   --accent: #8ab4ff;
@@ -79,12 +105,16 @@
     font-family: var(--font-geist-pixel-circle), system-ui, sans-serif;
   }
 
+  [data-theme='dark'] body {
+    background: #111113;
+  }
+
   /* Nebulae over deep space, with two layers of stars that drift apart in brightness. */
   [data-theme='galaxy'] body {
     background:
       radial-gradient(
         ellipse 60% 50% at 15% 10%,
-        rgb(124 92 255 / 0.22),
+        rgb(138 123 184 / 0.2),
         transparent 70%
       ),
       radial-gradient(

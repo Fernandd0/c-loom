@@ -11,6 +11,7 @@ import { SettingsCaption, SettingsGroup, SettingsSwitch } from '../SettingsRow'
 
 const APPEARANCES: { value: ThemePreference; label: string }[] = [
   { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
   { value: 'galaxy', label: 'Galaxy' },
   { value: 'system', label: 'Automatic' },
 ]
@@ -30,7 +31,7 @@ export function SettingsTab() {
         <div
           role="radiogroup"
           aria-label="Appearance"
-          className="grid grid-cols-3 gap-3"
+          className="grid grid-cols-4 gap-2.5"
         >
           {APPEARANCES.map(({ value, label }) => {
             const selected = preference === value
@@ -66,7 +67,7 @@ export function SettingsTab() {
           })}
         </div>
         <p className="mt-3 px-1 text-[12px] text-(--fg-3)">
-          Automatic switches to Galaxy when your device is in dark mode.
+          Automatic follows your device between Light and Dark.
         </p>
       </div>
 
@@ -98,7 +99,7 @@ function Preview({ kind }: { kind: ThemePreference }) {
           <Scene kind="light" />
         </span>
         <span className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]">
-          <Scene kind="galaxy" />
+          <Scene kind="dark" />
         </span>
       </span>
     )
@@ -106,16 +107,18 @@ function Preview({ kind }: { kind: ThemePreference }) {
   return <Scene kind={kind} />
 }
 
-function Scene({ kind }: { kind: 'light' | 'galaxy' }) {
-  const galaxy = kind === 'galaxy'
+const SCENE_BACKGROUNDS = {
+  light: '#f2f2f7',
+  dark: '#1c1c1e',
+  galaxy:
+    'radial-gradient(ellipse 70% 60% at 20% 15%, rgb(138 123 184 / 0.45), transparent 70%), radial-gradient(1px 1px at 30% 70%, #fff, transparent), radial-gradient(1px 1px at 70% 20%, #fff, transparent), radial-gradient(1px 1px at 85% 60%, #fff, transparent), #05060f',
+}
+
+function Scene({ kind }: { kind: 'light' | 'dark' | 'galaxy' }) {
   return (
     <span
       className="relative block h-full w-full"
-      style={{
-        background: galaxy
-          ? 'radial-gradient(ellipse 70% 60% at 20% 15%, rgb(124 92 255 / 0.45), transparent 70%), radial-gradient(1px 1px at 30% 70%, #fff, transparent), radial-gradient(1px 1px at 70% 20%, #fff, transparent), radial-gradient(1px 1px at 85% 60%, #fff, transparent), #05060f'
-          : '#f2f2f7',
-      }}
+      style={{ background: SCENE_BACKGROUNDS[kind] }}
     >
       {[
         { left: '18%', top: '30%', size: 22, color: '#007AFF' },

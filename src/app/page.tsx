@@ -253,7 +253,7 @@ export default function Home() {
             />
           </div>
         ) : null}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden in-data-[theme=galaxy]:hidden">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden in-data-[theme=dark]:hidden in-data-[theme=galaxy]:hidden">
           <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
@@ -320,7 +320,7 @@ export default function Home() {
 
         <div className="pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-8 sm:pt-12">
           <div className="pointer-events-auto relative">
-            <div className="pointer-events-none absolute inset-0 -top-20 -bottom-4 left-1/2 w-[120%] -translate-x-1/2 bg-gradient-to-t from-white/40 via-white/20 to-transparent backdrop-blur-[2px] in-data-[theme=galaxy]:hidden" />
+            <div className="pointer-events-none absolute inset-0 -top-20 -bottom-4 left-1/2 w-[120%] -translate-x-1/2 bg-gradient-to-t from-white/40 via-white/20 to-transparent backdrop-blur-[2px] in-data-[theme=dark]:hidden in-data-[theme=galaxy]:hidden" />
             <div className="relative">
               <AddTaskDialog
                 categories={categories}
