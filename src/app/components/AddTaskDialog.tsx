@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AlignLeft, Sparkles } from 'lucide-react'
+import { AlignLeft, Plus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -58,6 +58,7 @@ export function AddTaskDialog({
     'c-loom-last-category'
   )
   const formRef = useRef<HTMLFormElement>(null)
+  const justCreated = useRef(false)
 
   // "Pay rent tomorrow 9am #personal !high" fills the fields as you type.
   const parsed = parseQuickAdd(title, categories)
@@ -91,7 +92,19 @@ export function AddTaskDialog({
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault()
         setOpen(true)
+        return
       }
+      // Plain "N" opens it too, unless typing or another dialog is open.
+      if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey)
+        return
+      const target = e.target as HTMLElement | null
+      if (
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        document.querySelector('[role="dialog"]')
+      )
+        return
+      e.preventDefault()
+      setOpen(true)
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -141,6 +154,7 @@ export function AddTaskDialog({
       priority: fields.priority,
     })
     setLastCategoryId(categoryId)
+    justCreated.current = true
     setOpen(false)
     reset()
   }
@@ -154,18 +168,28 @@ export function AddTaskDialog({
       }}
     >
       <DialogTrigger asChild>
-        <div className="flex flex-col items-center">
-          <Button
-            aria-label="New task"
-            className="h-24 w-48 rounded-t-full rounded-b-none border-t border-white/10 bg-[#1C1C1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15),0_12px_28px_rgba(0,0,0,0.2)] transition-all duration-200 hover:bg-[#2C2C2E] hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_16px_36px_rgba(0,0,0,0.25)] active:scale-[0.98] sm:h-28 sm:w-56 md:h-32 md:w-64"
-          >
-            <span className="mb-2 text-[4rem] leading-none font-light sm:mb-3 sm:text-[5rem] md:text-[6rem]">
-              +
-            </span>
-          </Button>
-        </div>
+        <button
+          type="button"
+          aria-label="New task"
+          aria-keyshortcuts="N Meta+Enter Control+Enter"
+          className="group flex h-24 w-48 items-center justify-center rounded-t-full border-t border-white/10 bg-[#1C1C1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15),0_12px_28px_rgba(0,0,0,0.2)] transition-all duration-200 outline-none hover:bg-[#2C2C2E] hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_16px_36px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/40 focus-visible:ring-offset-2 active:scale-[0.98] sm:h-28 sm:w-56 md:h-32 md:w-64"
+        >
+          {/* An SVG, not a "+" glyph: text metrics put its center off-axis when it turns. */}
+          <Plus
+            aria-hidden
+            strokeWidth={1.25}
+            className="mb-2 h-14 w-14 transition-transform duration-300 ease-out group-hover:rotate-90 sm:mb-3 sm:h-16 sm:w-16 md:h-20 md:w-20"
+          />
+        </button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100vw-2rem)] overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl">
+      <DialogContent
+        className="w-[calc(100vw-2rem)] overflow-visible border-0 bg-transparent p-0 shadow-none sm:max-w-xl"
+        // After creating, leave focus on the board instead of ringing the button every time.
+        onCloseAutoFocus={(e) => {
+          if (justCreated.current) e.preventDefault()
+          justCreated.current = false
+        }}
+      >
         <DialogTitle className="sr-only">New task</DialogTitle>
         <DialogDescription className="sr-only">
           Name the task, then optionally change its category, due date and

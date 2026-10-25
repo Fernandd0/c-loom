@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import { AlertOctagon, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -52,13 +52,8 @@ export default function TaskCircle({
 
   const isUrgent = urgency === 'today' || urgency === 'overdue'
 
-  const customStyle = color
-    ? {
-        backgroundColor: color,
-        borderColor: color,
-        color: '#fff',
-      }
-    : {}
+  // Without a category: green, or red once the deadline is close.
+  const base = color ?? (isUrgent ? '#F43F5E' : '#34D399')
 
   return (
     <motion.button
@@ -77,22 +72,21 @@ export default function TaskCircle({
       whileTap={{ scale: 0.95 }}
       onClick={() => setClickCount((prev) => prev + 1)}
       className={cn(
-        'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 p-4 text-center transition-all duration-300 ease-in-out',
-
-        !color && !isUrgent && 'border-emerald-500 bg-emerald-400 text-white',
-        !color && isUrgent && 'border-rose-500 bg-rose-500 text-white',
-        urgency === 'overdue' && 'ring-4 ring-[#FF3B30] ring-offset-2',
-
-        color && 'font-bold text-white'
+        'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full p-4 text-center font-bold text-white transition-[width,height,box-shadow] duration-300 ease-in-out',
+        urgency === 'overdue' && 'ring-4 ring-[#FF3B30] ring-offset-2'
       )}
       style={{
         width: size,
         height: size,
         fontSize: Math.max(12, size / 10),
-        ...customStyle,
-        boxShadow: 'none',
+        ...sphereStyle(base, size),
       }}
     >
+      {/* Soft highlight, as if lit from the top left. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-[6%] left-[14%] h-[38%] w-[52%] rotate-[-20deg] rounded-full bg-gradient-to-b from-white/20 to-white/0 blur-sm"
+      />
       <div className="relative z-10 flex flex-col items-center gap-1">
         {isUrgent && (
           <AlertOctagon
@@ -116,4 +110,19 @@ export default function TaskCircle({
       </div>
     </motion.button>
   )
+}
+
+// Lit from the top left, darker underneath, floating on a shadow of its own color.
+// Shadows scale with the circle so small and big ones look the same depth.
+function sphereStyle(color: string, size: number): CSSProperties {
+  const d = size / 100
+  return {
+    background: `radial-gradient(circle at 32% 26%, color-mix(in srgb, ${color} 65%, white) 0%, ${color} 48%, color-mix(in srgb, ${color} 78%, black) 100%)`,
+    boxShadow: [
+      `inset 0 ${-6 * d}px ${16 * d}px rgba(0, 0, 0, 0.18)`,
+      `inset 0 ${3 * d}px ${8 * d}px rgba(255, 255, 255, 0.25)`,
+      `0 ${12 * d}px ${28 * d}px ${-6 * d}px color-mix(in srgb, ${color} 55%, transparent)`,
+      `0 ${2 * d}px ${6 * d}px rgba(0, 0, 0, 0.12)`,
+    ].join(', '),
+  }
 }
