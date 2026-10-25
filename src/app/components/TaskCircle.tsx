@@ -4,10 +4,13 @@ import { AlertOctagon, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Task } from '../types'
 import { getTaskDiameter, getTaskUrgency, TaskUrgency } from '../lib/task'
+import { CategoryIcon } from './task-form/categoryOptions'
 
 interface TaskCircleProps {
   task: Task
   color?: string
+  // The category's icon id, shown above the title.
+  icon?: string
   onComplete: (id: string) => void
   onSelect: (task: Task) => void
 }
@@ -15,6 +18,7 @@ interface TaskCircleProps {
 export default function TaskCircle({
   task,
   color,
+  icon,
   onComplete,
   onSelect,
 }: TaskCircleProps) {
@@ -54,6 +58,7 @@ export default function TaskCircle({
 
   // Without a category: green, or red once the deadline is close.
   const base = color ?? (isUrgent ? '#F43F5E' : '#34D399')
+  const iconSize = Math.round(Math.min(28, Math.max(14, size / 7)))
 
   return (
     <motion.button
@@ -103,6 +108,15 @@ export default function TaskCircle({
             className="h-5 w-5 text-white/90 drop-shadow-sm"
           />
         )}
+        {/* The category's icon, unless a deadline signal needs the spot. */}
+        {urgency === 'none' && icon && (
+          <span style={{ width: iconSize, height: iconSize }}>
+            <CategoryIcon
+              icon={icon}
+              className="h-full w-full text-white/90 drop-shadow-sm"
+            />
+          </span>
+        )}
 
         <span className="line-clamp-3 leading-tight font-bold tracking-tight break-words drop-shadow-md">
           {task.title}
@@ -114,7 +128,7 @@ export default function TaskCircle({
 
 // Lit from the top left, darker underneath, floating on a shadow of its own color.
 // Shadows scale with the circle so small and big ones look the same depth.
-function sphereStyle(color: string, size: number): CSSProperties {
+export function sphereStyle(color: string, size: number): CSSProperties {
   const d = size / 100
   return {
     background: `radial-gradient(circle at 32% 26%, color-mix(in srgb, ${color} 65%, white) 0%, ${color} 48%, color-mix(in srgb, ${color} 78%, black) 100%)`,

@@ -1,50 +1,62 @@
 'use client'
 
-import { Kbd } from '../Kbd'
+import { SettingsCaption, SettingsGroup, SettingsItem } from '../SettingsRow'
+
+const SHORTCUTS: { action: string; keys: string[] }[] = [
+  { action: 'New task', keys: ['N'] },
+  { action: 'New task, from anywhere', keys: ['⌘', '↵'] },
+  { action: 'Create the task', keys: ['↵'] },
+  { action: 'Guide', keys: ['⌘', 'G'] },
+  { action: 'Keyboard shortcuts', keys: ['⌘', 'K'] },
+  { action: 'Close or cancel', keys: ['esc'] },
+]
+
+const GESTURES: { action: string; how: string }[] = [
+  { action: 'Open a task', how: 'Click' },
+  { action: 'Complete a task', how: 'Double-click' },
+]
 
 export function HotkeysTab() {
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
-      <h2 className="text-center text-2xl font-bold tracking-tight text-[#1C1C1E]">
+    <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
+      <h2 className="text-center text-xl font-semibold tracking-tight text-[#1C1C1E]">
         Keyboard Shortcuts
       </h2>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <span className="text-sm font-medium text-[#1C1C1E]">New Task</span>
-          <div className="flex items-center gap-1">
-            <Kbd>N</Kbd>
-            <span className="text-xs text-[#8E8E93]">or</span>
-            <Kbd>⌘</Kbd>
-            <span className="text-xs text-[#8E8E93]">+</span>
-            <Kbd>Enter</Kbd>
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <span className="text-sm font-medium text-[#1C1C1E]">Open Guide</span>
-          <div className="flex items-center gap-1">
-            <Kbd>⌘</Kbd>
-            <span className="text-xs text-[#8E8E93]">+</span>
-            <Kbd>G</Kbd>
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <span className="text-sm font-medium text-[#1C1C1E]">
-            Open Shortcuts
-          </span>
-          <div className="flex items-center gap-1">
-            <Kbd>⌘</Kbd>
-            <span className="text-xs text-[#8E8E93]">+</span>
-            <Kbd>K</Kbd>
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-xl border border-[#E5E5EA] bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <span className="text-sm font-medium text-[#1C1C1E]">
-            Delete Task
-          </span>
-          <span className="text-xs font-semibold text-[#8E8E93]">
-            Double Click
-          </span>
-        </div>
+
+      <SettingsGroup>
+        {SHORTCUTS.map(({ action, keys }) => (
+          <SettingsItem
+            key={action}
+            title={<span className="font-normal">{action}</span>}
+            trailing={
+              <span className="flex gap-1">
+                {keys.map((k) => (
+                  <kbd
+                    key={k}
+                    className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-white px-1.5 font-sans text-[12px] font-medium text-[#3C3C43] shadow-[0_0_0_0.5px_rgba(0,0,0,0.12),0_1px_1px_rgba(0,0,0,0.08)]"
+                  >
+                    {k}
+                  </kbd>
+                ))}
+              </span>
+            }
+          />
+        ))}
+      </SettingsGroup>
+
+      <div>
+        <SettingsCaption>On the board</SettingsCaption>
+        <SettingsGroup>
+          {GESTURES.map(({ action, how }) => (
+            <SettingsItem
+              key={action}
+              title={<span className="font-normal">{action}</span>}
+              trailing={
+                <span className="text-[13px] text-[#8E8E93]">{how}</span>
+              }
+            />
+          ))}
+        </SettingsGroup>
       </div>
     </div>
   )

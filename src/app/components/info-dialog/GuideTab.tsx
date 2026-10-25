@@ -1,81 +1,138 @@
 'use client'
 
-import { AlertOctagon } from 'lucide-react'
+import {
+  AlertOctagon,
+  CalendarClock,
+  Circle,
+  Clock,
+  Flag,
+  MousePointerClick,
+  Sparkles,
+} from 'lucide-react'
+import { sphereStyle } from '../TaskCircle'
+import { SettingsCaption, SettingsGroup, SettingsItem } from '../SettingsRow'
+
+// Three stages of one task, to show growth at a glance.
+const STAGES = [
+  { size: 36, label: 'New' },
+  { size: 56, label: 'Waiting' },
+  { size: 80, label: 'Due', overdue: true },
+]
 
 export function GuideTab() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-[#1C1C1E]">
-          How C-LOOM Works
+        <h2 className="text-xl font-semibold tracking-tight text-[#1C1C1E]">
+          How C-LOOM works
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-[#3C3C43]">
-          Visual task management that grows with urgency
+        <p className="mt-1 text-[14px] text-[#8E8E93]">
+          The longer a task waits, the bigger it gets.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-[#E5E5EA] bg-gradient-to-b from-white to-[#FAFAFA] p-4">
-        <p className="text-center text-sm leading-relaxed text-[#1C1C1E]">
-          Tasks{' '}
-          <span className="font-semibold text-[#1C1C1E]">grow larger</span> with
-          time and as deadlines approach. Higher priority grows faster.
-          <br />
-          Complete them before they{' '}
-          <span className="font-semibold text-[#1C1C1E]">
-            take over your screen
-          </span>
-          .
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-[#E5E5EA] bg-gradient-to-br from-[#FFE6E6] to-[#FFD6D6] p-4">
-        <div className="mb-2 flex justify-center">
-          <div className="rounded-full bg-rose-100 p-2">
-            <AlertOctagon className="h-5 w-5 text-rose-600" />
-          </div>
-        </div>
-        <p className="text-center text-xs font-semibold text-rose-900">
-          Deadline Alerts
-        </p>
-        <p className="mt-1 text-center text-[10px] text-rose-700">
-          A clock when due within 3 days, an alert within 24 hours, a red ring
-          once overdue
-        </p>
-      </div>
-
-      <div className="space-y-2.5">
-        <p className="text-center text-xs font-semibold text-[#1C1C1E]">
-          Key Features
-        </p>
-        <div className="grid grid-cols-2 gap-2 text-[11px]">
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">📁</span>
-            <span className="text-[#3C3C43]">Multiple workspaces</span>
-          </div>
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">🏷️</span>
-            <span className="text-[#3C3C43]">Custom categories</span>
-          </div>
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">⚡</span>
-            <span className="text-[#3C3C43]">Priority: Low → Critical</span>
-          </div>
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">🔄</span>
-            <span className="text-[#3C3C43]">Recurring tasks</span>
-          </div>
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">☁️</span>
-            <span className="text-[#3C3C43]">Cloud sync with Supabase</span>
-          </div>
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9F9F9] px-3 py-2">
-            <span className="mt-0.5 text-[#8E8E93]">✨</span>
-            <span className="text-[#3C3C43]">
-              Free <span className="text-[#8E8E93]">(for now)</span>
+      <div
+        aria-hidden
+        className="flex items-end justify-center gap-6 rounded-xl bg-[#F2F2F7] px-4 pt-6 pb-4"
+      >
+        {STAGES.map(({ size, label, overdue }) => (
+          <div key={label} className="flex flex-col items-center gap-2">
+            <span
+              className={
+                overdue
+                  ? 'rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-[#F2F2F7]'
+                  : 'rounded-full'
+              }
+              style={{
+                width: size,
+                height: size,
+                ...sphereStyle('#007AFF', size),
+              }}
+            />
+            <span className="text-[11px] font-medium text-[#8E8E93]">
+              {label}
             </span>
           </div>
-        </div>
+        ))}
+      </div>
+
+      <SettingsGroup>
+        <SettingsItem
+          icon={<Circle />}
+          tint="#007AFF"
+          title="Every task is a circle"
+          note="It starts small and grows every hour it waits."
+        />
+        <SettingsItem
+          icon={<Flag />}
+          tint="#FF9500"
+          title="Priority sets the pace"
+          note="High and Critical start bigger and grow faster."
+        />
+        <SettingsItem
+          icon={<CalendarClock />}
+          tint="#5856D6"
+          title="Due dates pull it in"
+          note="It fills up as the date gets close."
+        />
+        <SettingsItem
+          icon={<MousePointerClick />}
+          tint="#34C759"
+          title="Double-click when it's done"
+          note="Repeating tasks jump to their next date."
+        />
+      </SettingsGroup>
+
+      <div>
+        <SettingsCaption>Signals</SettingsCaption>
+        <SettingsGroup>
+          <SettingsItem
+            title="Due within 3 days"
+            trailing={<Signal kind="soon" />}
+          />
+          <SettingsItem title="Due today" trailing={<Signal kind="today" />} />
+          <SettingsItem title="Overdue" trailing={<Signal kind="overdue" />} />
+        </SettingsGroup>
+      </div>
+
+      <div>
+        <SettingsCaption>Tip</SettingsCaption>
+        <SettingsGroup>
+          <SettingsItem
+            icon={<Sparkles />}
+            tint="#AF52DE"
+            title="Type it all in the title"
+            note={
+              <>
+                <code className="rounded bg-white px-1 py-0.5 font-mono text-[12px] text-[#3C3C43]">
+                  Pay rent tomorrow 9am #personal !high
+                </code>{' '}
+                fills in the date, category and priority.
+              </>
+            }
+          />
+        </SettingsGroup>
       </div>
     </div>
+  )
+}
+
+// The same marks the circles show on the board.
+function Signal({ kind }: { kind: 'soon' | 'today' | 'overdue' }) {
+  return (
+    <span
+      className={
+        kind === 'overdue'
+          ? 'flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-[#F2F2F7]'
+          : 'flex h-7 w-7 items-center justify-center rounded-full'
+      }
+      style={sphereStyle('#007AFF', 28)}
+    >
+      {kind === 'soon' ? (
+        <Clock className="h-3.5 w-3.5 text-white" />
+      ) : (
+        <AlertOctagon className="h-3.5 w-3.5 text-white" />
+      )}
+    </span>
   )
 }

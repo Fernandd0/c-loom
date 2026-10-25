@@ -10,62 +10,64 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  Plus,
-  Check,
-  Trash2,
-  Pencil,
-  HelpCircle,
-  Keyboard,
-  Mail,
-  Menu,
-  LogOut,
   AlertTriangle,
+  BookOpen,
+  Command,
+  Info,
+  LayoutGrid,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Board } from '../types'
 import { LoginButton } from '@/components/LoginButton'
-import { InfoDialog } from './InfoDialog'
+import { InfoDialog, InfoTab, useInfoHotkeys } from './InfoDialog'
+import { SettingsGroup, SettingsRow } from './SettingsRow'
 import { signOut } from '@/lib/auth'
 import type { User } from '@supabase/supabase-js'
 import Image from 'next/image'
 
 function UserProfile({ user }: { user: User }) {
+  const name =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email?.split('@')[0]
   return (
-    <div className="rounded-2xl border-0 bg-[#F2F2F7] p-3">
-      <div className="mb-2 flex items-center gap-2">
+    <SettingsGroup>
+      <div className="relative flex items-center gap-3 px-2.5 py-2.5 after:absolute after:right-0 after:bottom-0 after:left-[46px] after:h-px after:bg-black/[0.07]">
         {user.user_metadata?.avatar_url ? (
           <Image
             src={user.user_metadata.avatar_url}
-            alt="Profile"
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-full border-0 shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
+            alt=""
+            width={24}
+            height={24}
+            className="h-6 w-6 shrink-0 rounded-full"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border-0 bg-white text-[15px] font-semibold text-[#3C3C43] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            {(user.user_metadata?.full_name ||
-              user.email ||
-              'U')[0].toUpperCase()}
-          </div>
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8E8E93] text-[11px] font-semibold text-white">
+            {(name || 'U')[0].toUpperCase()}
+          </span>
         )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-[#000000]">
-            {user.user_metadata?.full_name ||
-              user.user_metadata?.name ||
-              user.email?.split('@')[0]}
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[14px] font-medium text-[#1C1C1E]">
+            {name}
           </p>
-          <p className="truncate text-[13px] text-[#8E8E93]">{user.email}</p>
+          <p className="truncate text-[12px] text-[#8E8E93]">{user.email}</p>
         </div>
       </div>
-      <button
+      <SettingsRow
+        icon={<LogOut />}
+        tint="#FF3B30"
+        label="Sign out"
+        destructive
         onClick={signOut}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-[13px] font-semibold text-[#8E8E93] shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all hover:text-[#FF3B30] hover:shadow-[0_1px_3px_rgba(0,0,0,0.1)]"
-      >
-        <LogOut size={14} />
-        Sign out
-      </button>
-    </div>
+      />
+    </SettingsGroup>
   )
 }
 
@@ -95,6 +97,7 @@ interface SidebarContentProps {
   handleRename: (boardId: string) => void
   setIsExpanded: (expanded: boolean) => void
   setIsHovering: (hovering: boolean) => void
+  onOpenInfo: (tab: InfoTab) => void
 }
 
 function SidebarContent({
@@ -113,120 +116,129 @@ function SidebarContent({
   handleRename,
   setIsExpanded,
   setIsHovering,
+  onOpenInfo,
 }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-slate-200/60 px-4 py-3">
-        <h2 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+      <div className="flex h-12 items-center justify-between px-4">
+        <h2 className="text-[11px] font-semibold tracking-[0.06em] text-[#8E8E93] uppercase">
           Workspaces
         </h2>
         {isExpanded && (
           <button
             onClick={() => setIsExpanded(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:text-slate-700 hover:shadow-md"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[#8E8E93] transition-colors hover:bg-black/[0.05] hover:text-[#1C1C1E]"
             aria-label="Close sidebar"
           >
-            <Menu size={14} />
+            <PanelLeftClose size={16} />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        <div className="space-y-0.5">
-          {boards.map((board) => (
-            <div
-              key={board.id}
-              className="group flex w-full items-center gap-1"
-            >
-              {editingId === board.id ? (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRename(board.id)
-                    if (e.key === 'Escape') setEditingId(null)
-                  }}
-                  onBlur={() => handleRename(board.id)}
-                  className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-400 focus:ring-1 focus:ring-slate-400 focus:outline-none"
-                />
-              ) : (
-                <button
-                  onClick={() => {
-                    onSelectBoard(board.id)
-                    if (!isExpanded) setIsHovering(false)
-                  }}
-                  className={cn(
-                    'flex flex-1 items-center justify-between rounded-xl px-3 py-2 text-[15px] font-semibold transition-all',
-                    currentBoardId === board.id
-                      ? 'bg-[#E5E5EA] text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)]'
-                      : 'text-[#1C1C1E] hover:bg-[#F2F2F7]'
-                  )}
-                >
-                  <span className="truncate">{board.name}</span>
-                  {currentBoardId === board.id && (
-                    <Check size={14} className="ml-2" />
-                  )}
-                </button>
-              )}
-
-              <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  onClick={() => {
-                    setEditingId(board.id)
-                    setEditName(board.name)
-                  }}
-                  className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                  aria-label="Rename workspace"
-                >
-                  <Pencil size={12} />
-                </button>
-                {onDeleteBoard && (
+      <nav className="flex-1 overflow-y-auto px-2">
+        <ul className="space-y-0.5">
+          {boards.map((board) => {
+            const selected = currentBoardId === board.id
+            return (
+              <li key={board.id} className="group relative">
+                {editingId === board.id ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRename(board.id)
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    onBlur={() => handleRename(board.id)}
+                    aria-label="Workspace name"
+                    className="h-9 w-full rounded-lg bg-white px-2.5 text-[14px] font-medium text-[#1C1C1E] shadow-[0_0_0_2px_rgba(0,122,255,0.35)] outline-none"
+                  />
+                ) : (
                   <button
-                    onClick={() => onDeleteBoard(board.id)}
-                    className="rounded p-1 text-slate-400 transition-colors hover:bg-rose-100 hover:text-rose-600"
-                    aria-label="Delete workspace"
+                    onClick={() => {
+                      onSelectBoard(board.id)
+                      if (!isExpanded) setIsHovering(false)
+                    }}
+                    aria-current={selected ? 'page' : undefined}
+                    className={cn(
+                      'flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 pr-14 text-left text-[14px] transition-colors',
+                      selected
+                        ? 'bg-black/[0.06] font-semibold text-[#1C1C1E]'
+                        : 'font-medium text-[#3C3C43] hover:bg-black/[0.04]'
+                    )}
                   >
-                    <Trash2 size={12} />
+                    <LayoutGrid
+                      size={15}
+                      className={selected ? 'text-[#1C1C1E]' : 'text-[#8E8E93]'}
+                    />
+                    <span className="truncate">{board.name}</span>
                   </button>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
 
-        <div className="my-3 h-px bg-slate-200/60" />
+                {editingId !== board.id && (
+                  <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                    <button
+                      onClick={() => {
+                        setEditingId(board.id)
+                        setEditName(board.name)
+                      }}
+                      className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-black/[0.06] hover:text-[#1C1C1E]"
+                      aria-label="Rename workspace"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    {onDeleteBoard && (
+                      <button
+                        onClick={() => onDeleteBoard(board.id)}
+                        className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-[#FF3B30]/10 hover:text-[#FF3B30]"
+                        aria-label="Delete workspace"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
 
         <button
           onClick={onAddBoard}
-          className="flex w-full items-center gap-2 rounded-xl bg-[#E5E5EA] px-3 py-2 text-[15px] font-semibold text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:bg-[#D1D1D6]"
+          className="mt-0.5 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-[#8E8E93] transition-colors hover:bg-black/[0.04] hover:text-[#1C1C1E]"
         >
-          <Plus size={16} />
-          <span>New Workspace</span>
+          <Plus size={15} />
+          New Workspace
         </button>
-      </div>
+      </nav>
 
-      <div className="space-y-0.5 border-t border-slate-200/60 px-3 py-2 pb-4 sm:pb-2">
-        <InfoDialog
-          defaultTab="guide"
-          triggerLabel="Guide"
-          triggerIcon={<HelpCircle size={14} />}
-          hotkey="g"
-        />
-        <InfoDialog
-          defaultTab="hotkeys"
-          triggerLabel="Hotkeys"
-          triggerIcon={<Keyboard size={14} />}
-          hotkey="k"
-        />
-        <InfoDialog
-          defaultTab="contact"
-          triggerLabel="Contact"
-          triggerIcon={<Mail size={14} />}
-        />
-
-        <div className="my-2 h-px bg-slate-200/60" />
+      <div className="space-y-3 px-2 pt-2 pb-4 sm:pb-3">
+        <SettingsGroup>
+          <SettingsRow
+            icon={<BookOpen />}
+            tint="#007AFF"
+            label="Guide"
+            detail="⌘G"
+            aria-keyshortcuts="Meta+G"
+            onClick={() => onOpenInfo('guide')}
+          />
+          <SettingsRow
+            icon={<Command />}
+            tint="#8E8E93"
+            label="Keyboard Shortcuts"
+            detail="⌘K"
+            aria-keyshortcuts="Meta+K"
+            onClick={() => onOpenInfo('hotkeys')}
+          />
+          <SettingsRow
+            icon={<Info />}
+            tint="#5856D6"
+            label="About"
+            onClick={() => onOpenInfo('contact')}
+          />
+        </SettingsGroup>
 
         {user ? <UserProfile user={user} /> : <LoginButton />}
       </div>
@@ -248,6 +260,9 @@ export function Sidebar({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  // Lives here, always mounted, so the dialogs and their hotkeys work with the sidebar closed.
+  const [infoTab, setInfoTab] = useState<InfoTab | null>(null)
+  useInfoHotkeys(setInfoTab)
   const inputRef = useRef<HTMLInputElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
@@ -299,14 +314,14 @@ export function Sidebar({
           <button
             onClick={() => setIsExpanded(true)}
             className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-md border transition-all',
+              'flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md transition-colors',
               isHovering
-                ? 'border-slate-300 bg-white text-slate-700 shadow-md'
-                : 'border-slate-200 bg-white/90 text-slate-500 shadow-sm hover:border-slate-300 hover:shadow-md'
+                ? 'text-[#1C1C1E]'
+                : 'text-[#8E8E93] hover:text-[#1C1C1E]'
             )}
             aria-label="Open sidebar"
           >
-            <Menu size={14} />
+            <Menu size={16} />
           </button>
         </div>
       )}
@@ -339,6 +354,7 @@ export function Sidebar({
               handleRename={handleRename}
               setIsExpanded={setIsExpanded}
               setIsHovering={setIsHovering}
+              onOpenInfo={setInfoTab}
             />
           </motion.div>
         )}
@@ -363,9 +379,12 @@ export function Sidebar({
             handleRename={handleRename}
             setIsExpanded={setIsExpanded}
             setIsHovering={setIsHovering}
+            onOpenInfo={setInfoTab}
           />
         </div>
       )}
+
+      <InfoDialog tab={infoTab} onClose={() => setInfoTab(null)} />
 
       <Dialog
         open={!!deleteConfirmId}
