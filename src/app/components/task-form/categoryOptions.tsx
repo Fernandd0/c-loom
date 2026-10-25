@@ -14,18 +14,24 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+// Faded, printed-ink tones rather than bright screen colors.
 export const CATEGORY_COLORS = [
-  { name: 'Blue', value: '#007AFF' },
-  { name: 'Green', value: '#34C759' },
-  { name: 'Indigo', value: '#5856D6' },
-  { name: 'Orange', value: '#FF9500' },
-  { name: 'Pink', value: '#FF2D55' },
-  { name: 'Purple', value: '#AF52DE' },
-  { name: 'Red', value: '#FF3B30' },
-  { name: 'Teal', value: '#5AC8FA' },
-  { name: 'Yellow', value: '#FFCC00' },
-  { name: 'Gray', value: '#8E8E93' },
+  { name: 'Denim', value: '#4A6FA5' },
+  { name: 'Sage', value: '#6B8F71' },
+  { name: 'Indigo', value: '#5B5F97' },
+  { name: 'Terracotta', value: '#C9774E' },
+  { name: 'Rose', value: '#C97B84' },
+  { name: 'Plum', value: '#8E6C8A' },
+  { name: 'Brick', value: '#B5544B' },
+  { name: 'Teal', value: '#5E9C9A' },
+  { name: 'Mustard', value: '#D1A94F' },
+  { name: 'Stone', value: '#8A8478' },
 ]
+
+// How a category color is shown everywhere: softened toward a warm khaki, so colors saved
+// before (or bright defaults) look vintage too, without changing stored data.
+export const tone = (color: string) =>
+  `color-mix(in oklab, ${color} 64%, #b3a283)`
 
 export const CATEGORY_ICONS = [
   { name: 'Work', value: 'briefcase', Icon: Briefcase },
@@ -76,7 +82,7 @@ export function ColorSwatches({
               ? 'scale-110 ring-(--fg)/40'
               : 'ring-transparent hover:scale-110'
           )}
-          style={{ backgroundColor: c.value }}
+          style={{ backgroundColor: tone(c.value) }}
         />
       ))}
     </div>

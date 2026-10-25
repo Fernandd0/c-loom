@@ -23,6 +23,7 @@ import {
 } from '../../lib/task'
 import { ChipGroup, FieldLabel } from './ChipGroup'
 import { CategoryField } from './CategoryField'
+import { tone } from './categoryOptions'
 import { DeadlineField, DeadlineValue } from './DeadlineField'
 
 export interface TaskFieldsValue {
@@ -84,7 +85,9 @@ export function TaskFields({
         >
           <span
             className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: category?.color ?? '#C7C7CC' }}
+            style={{
+              backgroundColor: category ? tone(category.color) : '#C7C7CC',
+            }}
           />
           {category?.name ?? 'No category'}
           <ChevronDown className="h-3.5 w-3.5 text-(--fg-3)" />

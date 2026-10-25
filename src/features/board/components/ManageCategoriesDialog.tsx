@@ -20,6 +20,7 @@ import {
   ColorSwatches,
   CreateCategory,
   IconPicker,
+  tone,
 } from '@/app/components/task-form/categoryOptions'
 import { Category } from '@/app/types'
 import { CategoryChanges } from '../data/types'
@@ -148,7 +149,7 @@ function CategoryRow({
         <PopoverTrigger
           aria-label={`Color and icon for ${category.name}`}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)] outline-none focus-visible:ring-2 focus-visible:ring-(--fg)/30"
-          style={{ backgroundColor: category.color }}
+          style={{ backgroundColor: tone(category.color) }}
         >
           <CategoryIcon icon={category.icon} className="h-4 w-4" />
         </PopoverTrigger>

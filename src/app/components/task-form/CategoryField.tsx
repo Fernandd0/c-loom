@@ -4,7 +4,12 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Category } from '../../types'
-import { CategoryCreator, CreateCategory, iconFor } from './categoryOptions'
+import {
+  CategoryCreator,
+  CreateCategory,
+  iconFor,
+  tone,
+} from './categoryOptions'
 
 interface CategoryFieldProps {
   categories: Category[]
@@ -45,14 +50,16 @@ export function CategoryField({
                   ? 'text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)]'
                   : 'bg-(--surface-2) text-(--fg-2) hover:bg-(--surface-3)'
               )}
-              style={selected ? { backgroundColor: c.color } : undefined}
+              style={selected ? { backgroundColor: tone(c.color) } : undefined}
             >
               {Icon ? (
                 <Icon className="h-3.5 w-3.5" />
               ) : (
                 <span
                   className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: selected ? 'white' : c.color }}
+                  style={{
+                    backgroundColor: selected ? 'white' : tone(c.color),
+                  }}
                 />
               )}
               {c.name}

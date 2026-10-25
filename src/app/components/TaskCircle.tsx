@@ -4,7 +4,7 @@ import { AlertOctagon, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Task } from '../types'
 import { getTaskDiameter, getTaskUrgency, TaskUrgency } from '../lib/task'
-import { CategoryIcon } from './task-form/categoryOptions'
+import { CategoryIcon, tone } from './task-form/categoryOptions'
 
 interface TaskCircleProps {
   task: Task
@@ -57,7 +57,7 @@ export default function TaskCircle({
   const isUrgent = urgency === 'today' || urgency === 'overdue'
 
   // Without a category: green, or red once the deadline is close.
-  const base = color ?? (isUrgent ? '#F43F5E' : '#34D399')
+  const base = color ?? (isUrgent ? '#B5544B' : '#6B8F71')
   const iconSize = Math.round(Math.min(28, Math.max(14, size / 7)))
 
   return (
@@ -77,9 +77,9 @@ export default function TaskCircle({
       whileTap={{ scale: 0.95 }}
       onClick={() => setClickCount((prev) => prev + 1)}
       className={cn(
-        'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full p-4 text-center font-bold text-white transition-[width,height,box-shadow] duration-300 ease-in-out',
+        'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full p-4 text-center font-bold text-[#FFF8EC] transition-[width,height,box-shadow] duration-300 ease-in-out',
         urgency === 'overdue' &&
-          'ring-4 ring-[#FF3B30] ring-offset-2 ring-offset-transparent'
+          'ring-4 ring-[#B5544B] ring-offset-2 ring-offset-transparent'
       )}
       style={{
         width: size,
@@ -88,10 +88,11 @@ export default function TaskCircle({
         ...sphereStyle(base, size),
       }}
     >
-      {/* Soft highlight, as if lit from the top left. */}
+      {/* Paper grain, for a matte, printed look instead of a glossy one. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute top-[6%] left-[14%] h-[38%] w-[52%] rotate-[-20deg] rounded-full bg-gradient-to-b from-white/20 to-white/0 blur-sm"
+        className="pointer-events-none absolute inset-0 rounded-full opacity-60 mix-blend-multiply"
+        style={{ backgroundImage: GRAIN }}
       />
       <div className="relative z-10 flex flex-col items-center gap-1">
         {isUrgent && (
@@ -127,17 +128,20 @@ export default function TaskCircle({
   )
 }
 
-// Lit from the top left, darker underneath, floating on a shadow of its own color.
-// Shadows scale with the circle so small and big ones look the same depth.
+const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.13 0 0 0 0 0.09 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+
+// Matte and warm, like a printed planet: cream light from the top left, sepia shade
+// underneath and a soft neutral shadow, no colored glow. Shadows scale with the size.
 export function sphereStyle(color: string, size: number): CSSProperties {
   const d = size / 100
+  const c = tone(color)
   return {
-    background: `radial-gradient(circle at 32% 26%, color-mix(in srgb, ${color} 65%, white) 0%, ${color} 48%, color-mix(in srgb, ${color} 78%, black) 100%)`,
+    background: `radial-gradient(circle at 34% 28%, color-mix(in oklab, ${c} 72%, #fff4e0) 0%, ${c} 52%, color-mix(in oklab, ${c} 76%, #2b2118) 100%)`,
     boxShadow: [
-      `inset 0 ${-6 * d}px ${16 * d}px rgba(0, 0, 0, 0.18)`,
-      `inset 0 ${3 * d}px ${8 * d}px rgba(255, 255, 255, 0.25)`,
-      `0 ${12 * d}px ${28 * d}px ${-6 * d}px color-mix(in srgb, ${color} 55%, transparent)`,
-      `0 ${2 * d}px ${6 * d}px rgba(0, 0, 0, 0.12)`,
+      `inset 0 ${-5 * d}px ${14 * d}px rgba(43, 33, 24, 0.22)`,
+      `inset 0 ${2 * d}px ${6 * d}px rgba(255, 244, 224, 0.22)`,
+      `0 ${8 * d}px ${18 * d}px ${-6 * d}px rgba(43, 33, 24, 0.35)`,
+      `0 ${1 * d}px ${3 * d}px rgba(43, 33, 24, 0.15)`,
     ].join(', '),
   }
 }

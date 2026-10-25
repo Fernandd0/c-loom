@@ -15,6 +15,7 @@ import {
 } from '@/lib/dates'
 import { priorityLevel, recurrenceLabel, scheduleUpdate } from '../lib/task'
 import { TaskFields, TaskFieldsValue } from './task-form/TaskFields'
+import { tone } from './task-form/categoryOptions'
 
 interface TaskDetailDialogProps {
   task: Task
@@ -83,7 +84,7 @@ export function TaskDetailDialog({
 
   const deadline = parseDeadline(task.deadline)
   const overdue = !!deadline && isOverdue(deadline)
-  const color = category?.color || '#374151'
+  const color = category ? tone(category.color) : '#374151'
 
   return (
     <Dialog

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   CreateCategory,
   iconFor,
+  tone,
 } from '@/app/components/task-form/categoryOptions'
 import { Category, Task } from '@/app/types'
 import { CategoryChanges } from '../data/types'
@@ -85,17 +86,21 @@ export function CategoryBar({
                     ? 'text-white'
                     : 'text-(--fg-2) hover:bg-(--surface-2)'
                 )}
-                style={selected ? { backgroundColor: c.color } : undefined}
+                style={
+                  selected ? { backgroundColor: tone(c.color) } : undefined
+                }
               >
                 {Icon ? (
                   <Icon
                     className="h-3.5 w-3.5"
-                    style={selected ? undefined : { color: c.color }}
+                    style={selected ? undefined : { color: tone(c.color) }}
                   />
                 ) : (
                   <span
                     className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: selected ? 'white' : c.color }}
+                    style={{
+                      backgroundColor: selected ? 'white' : tone(c.color),
+                    }}
                   />
                 )}
                 {c.name}
