@@ -181,7 +181,7 @@ export default function Home() {
 
   const addBoard = () => {
     const name =
-      boards.length === 0 ? 'My Workspace' : `Workspace ${boards.length + 1}`
+      boards.length === 0 ? 'My Galaxy' : `Galaxy ${boards.length + 1}`
     setCurrentBoardId(createBoard(name))
   }
 
@@ -304,9 +304,9 @@ export default function Home() {
             <div className="mt-6 px-2 text-center text-slate-300 sm:mt-10">
               <p className="sr-only">All clear on {currentBoard?.name}.</p>
               <GalaxyText lines={['All clear on', `${currentBoard?.name}.`]} />
-              <p className="-mt-2 text-xl opacity-70 sm:-mt-4 sm:text-2xl md:text-3xl">
+              {/* <p className="-mt-2 text-xl opacity-70 sm:-mt-4 sm:text-2xl md:text-3xl">
                 Focus or Relax.
-              </p>
+              </p> */}
             </div>
           )}
         </div>

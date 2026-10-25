@@ -20,10 +20,10 @@ export default function PrivacyPage() {
       <section>
         <h2>Without an account</h2>
         <p>
-          If you use C-LOOM without signing in, your workspaces, categories and
-          tasks are saved only in your browser&apos;s local storage on that
-          device. They are never sent to our servers, and clearing your browser
-          data removes them.
+          If you use C-LOOM without signing in, your galaxies (workspaces),
+          categories and tasks are saved only in your browser&apos;s local
+          storage on that device. They are never sent to our servers, and
+          clearing your browser data removes them.
         </p>
       </section>
 
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
             account and show it in the app;
           </li>
           <li>
-            the workspaces, categories and tasks you create, including titles,
+            the galaxies, categories and tasks you create, including titles,
             details, due dates, priority and position on the board, so they sync
             across your devices.
           </li>

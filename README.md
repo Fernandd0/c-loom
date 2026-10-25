@@ -46,7 +46,7 @@ Type what needs doing and press Enter. That's it. Everything else is optional:
 - 🫧 **Circles that grow with time and priority**: your board shows what's been waiting longest.
 - ⚠️ **Deadline alerts** for anything due in the next 24 hours.
 - 🔁 **Repeating tasks** that move to their next date when you finish them.
-- 🗂️ **Workspaces** to keep work, home and side projects apart.
+- 🌌 **Galaxies** to keep work, home and side projects apart. Every task is a world inside one.
 - 🏷️ **Custom categories** with your own colors and icons.
 - ☁️ **Sync with Google sign-in**, across all your devices, with your board laid out the same way everywhere.
 - ⌨️ **Keyboard first**: create a task without touching the mouse.
@@ -55,7 +55,7 @@ Type what needs doing and press Enter. That's it. Everything else is optional:
 
 Open [c-loom.vercel.app](https://c-loom.vercel.app) and start right away. As a guest, your board is saved in your browser.
 
-When you want your tasks on every device, **sign in with Google**. C-Loom offers to bring over everything you made as a guest, and merges it into your workspace without duplicates.
+When you want your tasks on every device, **sign in with Google**. C-Loom offers to bring over everything you made as a guest, and merges it into your galaxy without duplicates.
 
 ## Keyboard shortcuts
 
@@ -72,7 +72,7 @@ On Windows and Linux, create a task with <kbd>Ctrl</kbd> <kbd>Enter</kbd>.
 ## Questions
 
 **Where is my data?**<br />
-As a guest, only in your browser on this device. Once you sign in, it's stored in your account, and nobody else can see your workspaces, categories or tasks.
+As a guest, only in your browser on this device. Once you sign in, it's stored in your account, and nobody else can see your galaxies, categories or tasks.
 
 **What happens when I finish a task?**<br />
 It disappears. C-Loom is about what's still on your plate, not a history of what you did. Repeating tasks are the exception: they move to their next date.

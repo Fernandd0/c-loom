@@ -122,7 +122,7 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       <div className="flex h-12 items-center justify-between px-4">
         <h2 className="text-[11px] font-semibold tracking-[0.06em] text-[#8E8E93] uppercase">
-          Workspaces
+          Galaxies
         </h2>
         {isExpanded && (
           <button
@@ -152,7 +152,7 @@ function SidebarContent({
                       if (e.key === 'Escape') setEditingId(null)
                     }}
                     onBlur={() => handleRename(board.id)}
-                    aria-label="Workspace name"
+                    aria-label="Galaxy name"
                     className="h-9 w-full rounded-lg bg-white px-2.5 text-[14px] font-medium text-[#1C1C1E] shadow-[0_0_0_2px_rgba(0,122,255,0.35)] outline-none"
                   />
                 ) : (
@@ -185,7 +185,7 @@ function SidebarContent({
                         setEditName(board.name)
                       }}
                       className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-black/[0.06] hover:text-[#1C1C1E]"
-                      aria-label="Rename workspace"
+                      aria-label="Rename galaxy"
                     >
                       <Pencil size={12} />
                     </button>
@@ -193,7 +193,7 @@ function SidebarContent({
                       <button
                         onClick={() => onDeleteBoard(board.id)}
                         className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-[#FF3B30]/10 hover:text-[#FF3B30]"
-                        aria-label="Delete workspace"
+                        aria-label="Delete galaxy"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -210,7 +210,7 @@ function SidebarContent({
           className="mt-0.5 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-[#8E8E93] transition-colors hover:bg-black/[0.04] hover:text-[#1C1C1E]"
         >
           <Plus size={15} />
-          New Workspace
+          New Galaxy
         </button>
       </nav>
 
@@ -395,10 +395,11 @@ export function Sidebar({
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
-            <DialogTitle className="text-center">Delete Workspace?</DialogTitle>
+            <DialogTitle className="text-center">
+              Delete this galaxy?
+            </DialogTitle>
             <DialogDescription className="text-center">
-              This action cannot be undone. All tasks in this workspace will be
-              permanently deleted.
+              All of its tasks go with it. This can&apos;t be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-center">
