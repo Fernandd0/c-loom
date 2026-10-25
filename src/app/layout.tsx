@@ -6,6 +6,8 @@ import { Caveat } from 'next/font/google'
 import './globals.css'
 import { Analytics } from '@vercel/analytics/next'
 import { env } from '@/lib/env'
+import { THEME_SCRIPT } from '@/lib/theme'
+import { ThemeSync } from './hooks/useTheme'
 
 // Handwriting for the first-run hints on an empty board.
 const caveat = Caveat({
@@ -29,12 +31,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    // data-theme is set before hydration by THEME_SCRIPT, so React mustn't warn about it.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body
         suppressHydrationWarning={true}
         className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelCircle.variable} ${caveat.variable} antialiased`}
       >
         {children}
+        <ThemeSync />
         <Analytics />
       </body>
     </html>

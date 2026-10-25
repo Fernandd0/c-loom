@@ -3,6 +3,53 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+
+  /* Theme tokens. Components use these instead of fixed colors. */
+  --page: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f2f2f7;
+  --surface-3: #e5e5ea;
+  --fg: #1c1c1e;
+  --fg-2: #3c3c43;
+  --fg-3: #8e8e93;
+  --fg-4: #c7c7cc;
+  --line: #e5e5ea;
+  --line-strong: #d1d1d6;
+  --hairline: rgb(0 0 0 / 0.07);
+  --hover: rgb(0 0 0 / 0.04);
+  --ink: #1c1c1e;
+  --ink-hover: #2c2c2e;
+  --glass: rgb(255 255 255 / 0.8);
+  --glass-strong: rgb(255 255 255 / 0.95);
+  --accent: #007aff;
+  --dot-soft: #cbd5e1;
+  --hint: #a1a1aa;
+}
+
+/* Galaxy: deep space, glowing planets and a nebula-violet accent. */
+:root[data-theme='galaxy'] {
+  color-scheme: dark;
+  --background: #05060f;
+  --foreground: #f5f5f7;
+  --page: transparent;
+  --surface: #14172a;
+  --surface-2: rgb(255 255 255 / 0.06);
+  --surface-3: rgb(255 255 255 / 0.12);
+  --fg: #f5f5f7;
+  --fg-2: #d4d6e4;
+  --fg-3: #8b8fa8;
+  --fg-4: #5a5f7a;
+  --line: rgb(255 255 255 / 0.1);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --hairline: rgb(255 255 255 / 0.08);
+  --hover: rgb(255 255 255 / 0.06);
+  --ink: #7c5cff;
+  --ink-hover: #8f73ff;
+  --glass: rgb(20 23 42 / 0.72);
+  --glass-strong: rgb(14 16 30 / 0.94);
+  --accent: #8ab4ff;
+  --dot-soft: rgb(226 232 255 / 0.6);
+  --hint: #7c809c;
 }
 
 @theme inline {
@@ -32,12 +79,74 @@
     font-family: var(--font-geist-pixel-circle), system-ui, sans-serif;
   }
 
-  .dark body {
-    background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 100%);
+  /* Nebulae over deep space, with two layers of stars that drift apart in brightness. */
+  [data-theme='galaxy'] body {
+    background:
+      radial-gradient(
+        ellipse 60% 50% at 15% 10%,
+        rgb(124 92 255 / 0.22),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 90% 95%,
+        rgb(56 189 248 / 0.14),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 40% 35% at 75% 25%,
+        rgb(236 72 153 / 0.08),
+        transparent 70%
+      ),
+      #05060f;
+  }
+
+  [data-theme='galaxy'] body::before,
+  [data-theme='galaxy'] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  [data-theme='galaxy'] body::before {
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fff, transparent),
+      radial-gradient(1px 1px at 37% 62%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 68% 34%, #fff, transparent),
+      radial-gradient(1px 1px at 84% 78%, #fff, transparent),
+      radial-gradient(1px 1px at 53% 88%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 23% 46%, #fff, transparent);
+    background-size: 420px 420px;
+    opacity: 0.55;
+  }
+
+  [data-theme='galaxy'] body::after {
+    background-image:
+      radial-gradient(1px 1px at 8% 72%, #c7d2fe, transparent),
+      radial-gradient(1px 1px at 46% 14%, #fff, transparent),
+      radial-gradient(2px 2px at 77% 56%, #e0e7ff, transparent),
+      radial-gradient(1px 1px at 91% 9%, #fff, transparent);
+    background-size: 270px 270px;
+    animation: twinkle 6s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-theme='galaxy'] body::after {
+      animation: none;
+    }
   }
 
   /* Safe area support for mobile devices */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 0.8;
   }
 }

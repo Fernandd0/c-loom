@@ -6,12 +6,17 @@ import { GlassCard } from './GlassCard'
 import { GuideTab } from './info-dialog/GuideTab'
 import { HotkeysTab } from './info-dialog/HotkeysTab'
 import { ContactTab } from './info-dialog/ContactTab'
+import { SettingsTab } from './info-dialog/SettingsTab'
 
-export type InfoTab = 'guide' | 'hotkeys' | 'contact'
+export type InfoTab = 'settings' | 'guide' | 'hotkeys' | 'contact'
 
-const HOTKEYS: Record<string, InfoTab> = { g: 'guide', k: 'hotkeys' }
+const HOTKEYS: Record<string, InfoTab> = {
+  ',': 'settings',
+  g: 'guide',
+  k: 'hotkeys',
+}
 
-// ⌘G opens the guide and ⌘K the shortcuts from anywhere, not only while the sidebar is open.
+// ⌘, opens settings, ⌘G the guide and ⌘K the shortcuts, from anywhere.
 export function useInfoHotkeys(open: (tab: InfoTab) => void) {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,6 +41,7 @@ export function InfoDialog({
     <Dialog open={!!tab} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="border-0 bg-transparent p-0 shadow-none sm:max-w-md">
         <GlassCard className="max-h-[85vh] overflow-y-auto p-6">
+          {tab === 'settings' && <SettingsTab />}
           {tab === 'guide' && <GuideTab />}
           {tab === 'hotkeys' && <HotkeysTab />}
           {tab === 'contact' && <ContactTab />}

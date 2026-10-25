@@ -12,6 +12,7 @@ import {
 import {
   AlertTriangle,
   BookOpen,
+  Settings,
   Command,
   Info,
   LayoutGrid,
@@ -39,7 +40,7 @@ function UserProfile({ user }: { user: User }) {
     user.email?.split('@')[0]
   return (
     <SettingsGroup>
-      <div className="relative flex items-center gap-3 px-2.5 py-2.5 after:absolute after:right-0 after:bottom-0 after:left-[46px] after:h-px after:bg-black/[0.07]">
+      <div className="relative flex items-center gap-3 px-2.5 py-2.5 after:absolute after:right-0 after:bottom-0 after:left-[46px] after:h-px after:bg-(--hairline)">
         {user.user_metadata?.avatar_url ? (
           <Image
             src={user.user_metadata.avatar_url}
@@ -54,10 +55,8 @@ function UserProfile({ user }: { user: User }) {
           </span>
         )}
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-[14px] font-medium text-[#1C1C1E]">
-            {name}
-          </p>
-          <p className="truncate text-[12px] text-[#8E8E93]">{user.email}</p>
+          <p className="truncate text-[14px] font-medium text-(--fg)">{name}</p>
+          <p className="truncate text-[12px] text-(--fg-3)">{user.email}</p>
         </div>
       </div>
       <SettingsRow
@@ -121,13 +120,13 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-12 items-center justify-between px-4">
-        <h2 className="text-[11px] font-semibold tracking-[0.06em] text-[#8E8E93] uppercase">
+        <h2 className="text-[11px] font-semibold tracking-[0.06em] text-(--fg-3) uppercase">
           Galaxies
         </h2>
         {isExpanded && (
           <button
             onClick={() => setIsExpanded(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[#8E8E93] transition-colors hover:bg-black/[0.05] hover:text-[#1C1C1E]"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-(--fg-3) transition-colors hover:bg-(--hover) hover:text-(--fg)"
             aria-label="Close sidebar"
           >
             <PanelLeftClose size={16} />
@@ -153,7 +152,7 @@ function SidebarContent({
                     }}
                     onBlur={() => handleRename(board.id)}
                     aria-label="Galaxy name"
-                    className="h-9 w-full rounded-lg bg-white px-2.5 text-[14px] font-medium text-[#1C1C1E] shadow-[0_0_0_2px_rgba(0,122,255,0.35)] outline-none"
+                    className="h-9 w-full rounded-lg bg-(--surface) px-2.5 text-[14px] font-medium text-(--fg) shadow-[0_0_0_2px_rgba(0,122,255,0.35)] outline-none"
                   />
                 ) : (
                   <button
@@ -165,13 +164,13 @@ function SidebarContent({
                     className={cn(
                       'flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 pr-14 text-left text-[14px] transition-colors',
                       selected
-                        ? 'bg-black/[0.06] font-semibold text-[#1C1C1E]'
-                        : 'font-medium text-[#3C3C43] hover:bg-black/[0.04]'
+                        ? 'bg-(--hover) font-semibold text-(--fg)'
+                        : 'font-medium text-(--fg-2) hover:bg-(--hover)'
                     )}
                   >
                     <LayoutGrid
                       size={15}
-                      className={selected ? 'text-[#1C1C1E]' : 'text-[#8E8E93]'}
+                      className={selected ? 'text-(--fg)' : 'text-(--fg-3)'}
                     />
                     <span className="truncate">{board.name}</span>
                   </button>
@@ -184,7 +183,7 @@ function SidebarContent({
                         setEditingId(board.id)
                         setEditName(board.name)
                       }}
-                      className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-black/[0.06] hover:text-[#1C1C1E]"
+                      className="rounded-md p-1 text-(--fg-3) transition-colors hover:bg-(--hover) hover:text-(--fg)"
                       aria-label="Rename galaxy"
                     >
                       <Pencil size={12} />
@@ -192,7 +191,7 @@ function SidebarContent({
                     {onDeleteBoard && (
                       <button
                         onClick={() => onDeleteBoard(board.id)}
-                        className="rounded-md p-1 text-[#8E8E93] transition-colors hover:bg-[#FF3B30]/10 hover:text-[#FF3B30]"
+                        className="rounded-md p-1 text-(--fg-3) transition-colors hover:bg-[#FF3B30]/10 hover:text-[#FF3B30]"
                         aria-label="Delete galaxy"
                       >
                         <Trash2 size={12} />
@@ -207,7 +206,7 @@ function SidebarContent({
 
         <button
           onClick={onAddBoard}
-          className="mt-0.5 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-[#8E8E93] transition-colors hover:bg-black/[0.04] hover:text-[#1C1C1E]"
+          className="mt-0.5 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-(--fg-3) transition-colors hover:bg-(--hover) hover:text-(--fg)"
         >
           <Plus size={15} />
           New Galaxy
@@ -216,6 +215,14 @@ function SidebarContent({
 
       <div className="space-y-3 px-2 pt-2 pb-4 sm:pb-3">
         <SettingsGroup>
+          <SettingsRow
+            icon={<Settings />}
+            tint="#8E8E93"
+            label="Settings"
+            detail="⌘,"
+            aria-keyshortcuts="Meta+Comma"
+            onClick={() => onOpenInfo('settings')}
+          />
           <SettingsRow
             icon={<BookOpen />}
             tint="#007AFF"
@@ -226,7 +233,7 @@ function SidebarContent({
           />
           <SettingsRow
             icon={<Command />}
-            tint="#8E8E93"
+            tint="#30B0C7"
             label="Keyboard Shortcuts"
             detail="⌘K"
             aria-keyshortcuts="Meta+K"
@@ -314,10 +321,8 @@ export function Sidebar({
           <button
             onClick={() => setIsExpanded(true)}
             className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md transition-colors',
-              isHovering
-                ? 'text-[#1C1C1E]'
-                : 'text-[#8E8E93] hover:text-[#1C1C1E]'
+              'flex h-8 w-8 items-center justify-center rounded-lg bg-(--glass) shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md transition-colors',
+              isHovering ? 'text-(--fg)' : 'text-(--fg-3) hover:text-(--fg)'
             )}
             aria-label="Open sidebar"
           >
@@ -335,7 +340,7 @@ export function Sidebar({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -280, opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed top-0 left-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-xl"
+            className="fixed top-0 left-0 z-40 flex h-screen w-64 flex-col border-r border-(--line) bg-(--glass-strong) shadow-2xl backdrop-blur-xl"
             onMouseLeave={() => setIsHovering(false)}
           >
             <SidebarContent
@@ -362,7 +367,7 @@ export function Sidebar({
 
       {/* Expanded Sidebar (pushes content) */}
       {isExpanded && (
-        <div className="flex h-screen w-64 flex-shrink-0 flex-col border-r border-slate-200/80 bg-white/95 backdrop-blur-sm">
+        <div className="flex h-screen w-64 flex-shrink-0 flex-col border-r border-(--line) bg-(--glass-strong) backdrop-blur-sm">
           <SidebarContent
             boards={boards}
             currentBoardId={currentBoardId}
@@ -392,8 +397,8 @@ export function Sidebar({
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#FF3B30]/12">
+              <AlertTriangle className="h-6 w-6 text-[#FF3B30]" />
             </div>
             <DialogTitle className="text-center">
               Delete this galaxy?
@@ -405,7 +410,7 @@ export function Sidebar({
           <DialogFooter className="sm:justify-center">
             <button
               onClick={() => setDeleteConfirmId(null)}
-              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:outline-none sm:mt-0 sm:w-auto"
+              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-(--line) bg-(--surface) px-4 py-2 text-sm font-medium text-(--fg-2) transition-colors hover:bg-(--page) focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:outline-none sm:mt-0 sm:w-auto"
             >
               Cancel
             </button>
