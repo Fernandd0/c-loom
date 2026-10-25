@@ -213,7 +213,7 @@ test('renames, recolors and deletes categories', async ({ page }) => {
   await expect(dialog.getByLabel('Name of Job')).toBeVisible()
 
   await dialog.getByRole('button', { name: 'Color and icon for Job' }).click()
-  await page.getByRole('button', { name: 'Purple' }).click()
+  await page.getByRole('button', { name: 'Plum' }).click()
   await page.keyboard.press('Escape')
 
   const categories = () =>
@@ -227,7 +227,7 @@ test('renames, recolors and deletes categories', async ({ page }) => {
     )
   await expect
     .poll(async () => (await categories()).find((c) => c.name === 'Job')?.color)
-    .toBe('#AF52DE')
+    .toBe('#8E6C8A')
 
   await dialog.getByRole('button', { name: 'Delete Job' }).click()
   await expect(dialog).toContainText('1 task stays, without a category.')
@@ -367,7 +367,7 @@ test('⌘K and ⌘G work with the sidebar closed', async ({ page }) => {
   ).toBeVisible()
 })
 
-test('Settings switches to the galaxy theme and remembers it', async ({
+test('Settings switches between Light, Dark, Galaxy and Automatic', async ({
   page,
 }) => {
   const html = page.locator('html')
@@ -383,6 +383,10 @@ test('Settings switches to the galaxy theme and remembers it', async ({
   await expect(html).toHaveAttribute('data-theme', 'galaxy')
 
   await page.keyboard.press('Meta+,')
+  await appearance.getByRole('radio', { name: 'Dark' }).click()
+  await expect(html).toHaveAttribute('data-theme', 'dark')
+
+  // Automatic follows the device, which is light in these tests.
   await appearance.getByRole('radio', { name: 'Automatic' }).click()
   await expect(html).toHaveAttribute('data-theme', 'light')
 })
