@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader } from '@/components/ui/loader'
 import { cn } from '@/lib/utils'
 import { useBoardData } from '@/features/board/data/useBoardData'
+import { GUEST_MODE_KEY } from '@/features/board/data/localSource'
 import { useStickyState } from './hooks/useStickyState'
 import { useCollisionResolution } from './hooks/useCollisionResolution'
 import TaskCircle from './components/TaskCircle'
@@ -18,6 +19,8 @@ import { LandingPage } from './components/LandingPage'
 import { ErrorToast } from './components/ErrorToast'
 import { GuestImportBanner } from './components/GuestImportBanner'
 import { CategoryBar } from '@/features/board/components/CategoryBar'
+import { OnboardingHints } from '@/features/board/components/OnboardingHints'
+import { GalaxyText } from '@/features/board/components/GalaxyText'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -77,6 +80,7 @@ export default function Home() {
     '',
     'c-loom-current-board'
   )
+  const [guestMode, setGuestMode] = useStickyState(false, GUEST_MODE_KEY)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
@@ -113,6 +117,13 @@ export default function Home() {
   const activeFilter = categories.some((c) => c.id === categoryFilter)
     ? categoryFilter
     : ''
+
+  // First-run pointers on an empty board; gone for good after the first click or key.
+  const [onboarded, setOnboarded] = useStickyState(false, 'c-loom-onboarded')
+  const dismissOnboarding = useCallback(
+    () => setOnboarded(true),
+    [setOnboarded]
+  )
 
   // Look the task up on every render so the detail dialog reflects saved edits.
   const selectedTask = currentTasks.find((t) => t.id === selectedTaskId)
@@ -182,11 +193,24 @@ export default function Home() {
     )
   }
 
-  // Show Landing Page if no boards (both guest and user)
-  if (boards.length === 0) {
+  // Signed-out visitors start on the landing until they choose to use this device,
+  // even if old guest data is around. Everyone without a board sees it too.
+  if (boards.length === 0 || (!user && !guestMode)) {
+    const localTaskCount = user
+      ? 0
+      : boards.reduce((n, b) => n + b.tasks.length, 0)
     return (
       <>
-        <LandingPage onCreateWorkspace={addBoard} user={user} />
+        <LandingPage
+          user={user}
+          hasLocalBoards={!user && boards.length > 0}
+          localTaskCount={localTaskCount}
+          onCreateWorkspace={() => {
+            if (!user) setGuestMode(true)
+            addBoard()
+          }}
+          onContinueLocal={() => setGuestMode(true)}
+        />
         <ErrorToast message={error} onDismiss={dismissError} />
       </>
     )
@@ -253,6 +277,7 @@ export default function Home() {
                   <TaskCircle
                     task={task}
                     color={category?.color}
+                    icon={category?.icon}
                     onComplete={completeTask}
                     onSelect={(t) => setSelectedTaskId(t.id)}
                   />
@@ -276,16 +301,20 @@ export default function Home() {
           )}
 
           {currentTasks.length === 0 && (
-            <div className="mt-10 animate-pulse px-4 text-center text-slate-300 sm:mt-20">
-              <p className="font-geist-pixel-circle text-4xl leading-tight font-medium sm:text-6xl md:text-7xl lg:text-9xl">
-                All clear on {currentBoard?.name}.
-              </p>
-              <p className="fonts-mono mt-2 text-xl opacity-70 sm:text-2xl md:text-3xl lg:text-4xl">
+            <div className="mt-6 px-2 text-center text-slate-300 sm:mt-10">
+              <p className="sr-only">All clear on {currentBoard?.name}.</p>
+              <GalaxyText lines={['All clear on', `${currentBoard?.name}.`]} />
+              <p className="-mt-2 text-xl opacity-70 sm:-mt-4 sm:text-2xl md:text-3xl">
                 Focus or Relax.
               </p>
             </div>
           )}
         </div>
+
+        <OnboardingHints
+          show={!onboarded && currentTasks.length === 0}
+          onDismiss={dismissOnboarding}
+        />
 
         <div className="pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-8 sm:pt-12">
           <div className="pointer-events-auto relative">

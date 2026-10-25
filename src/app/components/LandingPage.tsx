@@ -2,17 +2,28 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus } from 'lucide-react'
+import { ArrowRight, Plus } from 'lucide-react'
 import { signInWithGoogle } from '@/lib/auth'
 import { Loader } from '@/components/ui/loader'
 import { User } from '@supabase/supabase-js'
+import { LegalFooter } from '@/components/LegalPage'
 
 interface LandingPageProps {
   onCreateWorkspace: () => void
   user?: User | null
+  // A signed-out visitor who already has boards on this device continues to them.
+  hasLocalBoards?: boolean
+  localTaskCount?: number
+  onContinueLocal?: () => void
 }
 
-export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
+export function LandingPage({
+  onCreateWorkspace,
+  user,
+  hasLocalBoards = false,
+  localTaskCount = 0,
+  onContinueLocal,
+}: LandingPageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [userCount, setUserCount] = useState<number | null>(null)
 
@@ -74,7 +85,7 @@ export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#F5F5F7] p-6 selection:bg-black/10">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-[#F5F5F7] p-6 pb-16 selection:bg-black/10">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -100,13 +111,31 @@ export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
           variants={itemVariants}
           className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row"
         >
-          <button
-            onClick={onCreateWorkspace}
-            className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
-          >
-            <Plus size={18} />
-            <span>Create Workspace</span>
-          </button>
+          {hasLocalBoards ? (
+            <button
+              onClick={onContinueLocal}
+              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+            >
+              <span>Continue on this device</span>
+              {localTaskCount > 0 && (
+                <span className="font-normal text-white/60">
+                  · {localTaskCount} {localTaskCount === 1 ? 'task' : 'tasks'}
+                </span>
+              )}
+              <ArrowRight
+                size={16}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </button>
+          ) : (
+            <button
+              onClick={onCreateWorkspace}
+              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+            >
+              <Plus size={18} />
+              <span>Create Workspace</span>
+            </button>
+          )}
 
           {!user && (
             <button
@@ -141,6 +170,7 @@ export function LandingPage({ onCreateWorkspace, user }: LandingPageProps) {
           </motion.div>
         )}
       </motion.div>
+      <LegalFooter className="absolute inset-x-0 bottom-6" />
     </div>
   )
 }

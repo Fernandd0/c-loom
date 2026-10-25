@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { LogIn } from 'lucide-react'
+import { Cloud } from 'lucide-react'
 import { Loader } from '@/components/ui/loader'
 import { signInWithGoogle } from '@/lib/auth'
+import { SettingsGroup, SettingsRow } from '@/app/components/SettingsRow'
 
 // Shown only to guests; signed-in users see their profile in the sidebar instead.
 export function LoginButton() {
@@ -28,12 +29,13 @@ export function LoginButton() {
   }
 
   return (
-    <button
-      onClick={handleLogin}
-      className="group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-black/5 hover:text-black"
-    >
-      <LogIn size={16} />
-      <span>Sign in</span>
-    </button>
+    <SettingsGroup>
+      <SettingsRow
+        icon={<Cloud />}
+        tint="#34C759"
+        label="Sign in to sync"
+        onClick={handleLogin}
+      />
+    </SettingsGroup>
   )
 }

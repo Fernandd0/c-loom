@@ -11,4 +11,6 @@ if (!supabaseUrl?.startsWith('http') || !supabaseAnonKey) {
 export const env = {
   supabaseUrl,
   supabaseAnonKey,
+  // Server only, optional: the Google Search Console HTML-tag token, to verify domain ownership.
+  googleSiteVerification: process.env.GOOGLE_SITE_VERIFICATION,
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { forgetGuestMode } from '@/features/board/data/localSource'
 
 // Redirects to Google; the browser comes back through /auth/callback.
 export async function signInWithGoogle() {
@@ -9,6 +10,8 @@ export async function signInWithGoogle() {
   if (error) throw error
 }
 
+// Forgets the guest choice first, so the signed-out render already shows the landing.
 export async function signOut() {
+  forgetGuestMode()
   await createClient().auth.signOut()
 }

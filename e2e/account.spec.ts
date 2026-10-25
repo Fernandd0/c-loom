@@ -41,6 +41,40 @@ test('lands straight on the seeded workspace, without a guest flash', async ({
   await expect(page.getByText('Create Workspace')).toHaveCount(0)
 })
 
+test('signing out goes back to the landing, not to guest data', async ({
+  page,
+}) => {
+  await page.goto('/')
+  // Guest data from earlier on this device, opened as a guest before.
+  await page.evaluate(() => {
+    localStorage.setItem('c-loom-guest-mode', 'true')
+    localStorage.setItem(
+      'c-loom-boards',
+      JSON.stringify([
+        {
+          id: crypto.randomUUID(),
+          name: 'Old guest board',
+          createdAt: new Date().toISOString(),
+          userId: 'local',
+          tasks: [],
+        },
+      ])
+    )
+  })
+  await page.reload()
+  await expect(page.getByText('All clear on My Workspace')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  // The hover overlay can still be animating out for a moment.
+  const signOut = page.getByRole('button', { name: 'Sign out' })
+  await expect(signOut).toHaveCount(1)
+  await signOut.click()
+  await expect(
+    page.getByRole('button', { name: /Continue on this device/ })
+  ).toBeVisible()
+  await expect(page.getByText('Old guest board')).toHaveCount(0)
+})
+
 test('saves tasks to Supabase and completes them there', async ({ page }) => {
   const errors = trackConsoleErrors(page)
   await page.goto('/')

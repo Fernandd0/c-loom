@@ -302,3 +302,57 @@ test('N opens the new task dialog, but not while typing', async ({ page }) => {
   await expect(title).toHaveValue('Not againn')
   await expect(page.getByRole('dialog')).toHaveCount(1)
 })
+
+test('a signed-out visitor with old local data starts on the landing', async ({
+  page,
+}) => {
+  await addTask(page, 'Left from before')
+  // As if the visitor never chose to use this device (older version, or after signing out).
+  await page.evaluate(() => localStorage.removeItem('c-loom-guest-mode'))
+  await page.reload()
+
+  const resume = page.getByRole('button', { name: /Continue on this device/ })
+  await expect(resume).toContainText('1 task')
+  await expect(page.getByText('Left from before', { exact: true })).toHaveCount(
+    0
+  )
+  await resume.click()
+  await expect(
+    page.getByText('Left from before', { exact: true })
+  ).toBeVisible()
+
+  // The choice is remembered.
+  await page.reload()
+  await expect(
+    page.getByText('Left from before', { exact: true })
+  ).toBeVisible()
+})
+
+test('first-run hints show on a new board and go away for good on click', async ({
+  page,
+}) => {
+  const hints = page.getByTestId('onboarding-hints')
+  await expect(hints).toBeVisible()
+  await expect(hints).toContainText('or just press N')
+
+  await page.mouse.click(600, 400)
+  await expect(hints).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'New task' })).toBeVisible()
+  await expect(hints).toHaveCount(0)
+})
+
+// Regression: the dialogs lived inside the sidebar, so ⌘K / ⌘G did nothing while it was closed.
+test('⌘K and ⌘G work with the sidebar closed', async ({ page }) => {
+  await page.keyboard.press('Meta+k')
+  const dialog = page.getByRole('dialog')
+  await expect(
+    dialog.getByRole('heading', { name: 'Keyboard Shortcuts' })
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await page.keyboard.press('Meta+g')
+  await expect(
+    dialog.getByRole('heading', { name: 'How C-LOOM works' })
+  ).toBeVisible()
+})

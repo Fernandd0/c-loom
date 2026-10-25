@@ -3,6 +3,17 @@ import { BoardDataSource, BoardSnapshot } from './types'
 
 const BOARDS_KEY = 'c-loom-boards'
 const CATEGORIES_KEY = 'c-loom-categories'
+// Set once a signed-out visitor chooses to use the app on this device; until then they see the landing.
+export const GUEST_MODE_KEY = 'c-loom-guest-mode'
+
+// After signing out, start again from the landing instead of whatever guest data is left.
+export function forgetGuestMode() {
+  try {
+    window.localStorage.removeItem(GUEST_MODE_KEY)
+  } catch {
+    // Storage blocked: nothing was remembered either.
+  }
+}
 
 // Guest boards share these; workspace 'default' means "every board".
 const DEFAULT_CATEGORIES: Category[] = [
