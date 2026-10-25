@@ -23,7 +23,7 @@ interface CategoryBarProps {
 }
 
 const chip =
-  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/30'
+  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-(--fg)/30'
 
 // Focus on one category (the rest of the board dims) and get to category management.
 export function CategoryBar({
@@ -46,7 +46,7 @@ export function CategoryBar({
 
   return (
     <>
-      <div className="flex max-w-full items-center gap-1 rounded-full bg-white/80 p-1 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md">
+      <div className="flex max-w-full items-center gap-1 rounded-full bg-(--glass) p-1 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md">
         <div
           role="radiogroup"
           aria-label="Show category"
@@ -61,8 +61,8 @@ export function CategoryBar({
             className={cn(
               chip,
               !filterId
-                ? 'bg-[#1C1C1E] text-white'
-                : 'text-[#3C3C43] hover:bg-[#F2F2F7]'
+                ? 'bg-(--ink) text-white'
+                : 'text-(--fg-2) hover:bg-(--surface-2)'
             )}
           >
             All
@@ -81,7 +81,9 @@ export function CategoryBar({
                 onClick={() => onFilterChange(selected ? '' : c.id)}
                 className={cn(
                   chip,
-                  selected ? 'text-white' : 'text-[#3C3C43] hover:bg-[#F2F2F7]'
+                  selected
+                    ? 'text-white'
+                    : 'text-(--fg-2) hover:bg-(--surface-2)'
                 )}
                 style={selected ? { backgroundColor: c.color } : undefined}
               >
@@ -101,7 +103,7 @@ export function CategoryBar({
                   <span
                     className={cn(
                       'tabular-nums',
-                      selected ? 'text-white/80' : 'text-[#8E8E93]'
+                      selected ? 'text-white/80' : 'text-(--fg-3)'
                     )}
                   >
                     {count}
@@ -115,7 +117,7 @@ export function CategoryBar({
           type="button"
           onClick={() => setIsManaging(true)}
           aria-label="Edit categories"
-          className={cn(chip, 'px-2 text-[#8E8E93] hover:bg-[#F2F2F7]')}
+          className={cn(chip, 'px-2 text-(--fg-3) hover:bg-(--surface-2)')}
         >
           <Settings2 className="h-4 w-4" />
         </button>

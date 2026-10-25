@@ -23,24 +23,24 @@ export function GuideTab() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
       <div className="text-center">
-        <h2 className="text-xl font-semibold tracking-tight text-[#1C1C1E]">
+        <h2 className="text-xl font-semibold tracking-tight text-(--fg)">
           How C-LOOM works
         </h2>
-        <p className="mt-1 text-[14px] text-[#8E8E93]">
+        <p className="mt-1 text-[14px] text-(--fg-3)">
           The longer a task waits, the bigger it gets.
         </p>
       </div>
 
       <div
         aria-hidden
-        className="flex items-end justify-center gap-6 rounded-xl bg-[#F2F2F7] px-4 pt-6 pb-4"
+        className="flex items-end justify-center gap-6 rounded-xl bg-(--surface-2) px-4 pt-6 pb-4"
       >
         {STAGES.map(({ size, label, overdue }) => (
           <div key={label} className="flex flex-col items-center gap-2">
             <span
               className={
                 overdue
-                  ? 'rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-[#F2F2F7]'
+                  ? 'rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-(--surface-2)'
                   : 'rounded-full'
               }
               style={{
@@ -49,7 +49,7 @@ export function GuideTab() {
                 ...sphereStyle('#007AFF', size),
               }}
             />
-            <span className="text-[11px] font-medium text-[#8E8E93]">
+            <span className="text-[11px] font-medium text-(--fg-3)">
               {label}
             </span>
           </div>
@@ -104,7 +104,7 @@ export function GuideTab() {
             title="Type it all in the title"
             note={
               <>
-                <code className="rounded bg-white px-1 py-0.5 font-mono text-[12px] text-[#3C3C43]">
+                <code className="rounded bg-(--surface) px-1 py-0.5 font-mono text-[12px] text-(--fg-2)">
                   Pay rent tomorrow 9am #personal !high
                 </code>{' '}
                 fills in the date, category and priority.
@@ -123,7 +123,7 @@ function Signal({ kind }: { kind: 'soon' | 'today' | 'overdue' }) {
     <span
       className={
         kind === 'overdue'
-          ? 'flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-[#F2F2F7]'
+          ? 'flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-[#FF3B30] ring-offset-2 ring-offset-(--surface-2)'
           : 'flex h-7 w-7 items-center justify-center rounded-full'
       }
       style={sphereStyle('#007AFF', 28)}

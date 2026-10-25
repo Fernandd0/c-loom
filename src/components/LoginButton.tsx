@@ -22,7 +22,7 @@ export function LoginButton() {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--glass) backdrop-blur-sm">
         <Loader />
       </div>
     )

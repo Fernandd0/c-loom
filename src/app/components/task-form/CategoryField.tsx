@@ -43,7 +43,7 @@ export function CategoryField({
                 'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
                 selected
                   ? 'text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)]'
-                  : 'bg-[#F2F2F7] text-[#3C3C43] hover:bg-[#E5E5EA]'
+                  : 'bg-(--surface-2) text-(--fg-2) hover:bg-(--surface-3)'
               )}
               style={selected ? { backgroundColor: c.color } : undefined}
             >
@@ -64,7 +64,7 @@ export function CategoryField({
             type="button"
             onClick={() => setIsCreating((v) => !v)}
             aria-expanded={isCreating}
-            className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-[#C7C7CC] px-3 text-[13px] font-semibold text-[#8E8E93] transition-colors hover:border-[#8E8E93] hover:text-[#1C1C1E]"
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-(--line-strong) px-3 text-[13px] font-semibold text-(--fg-3) transition-colors hover:border-[#8E8E93] hover:text-(--fg)"
           >
             <Plus className="h-3.5 w-3.5" />
             New

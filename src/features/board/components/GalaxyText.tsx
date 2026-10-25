@@ -3,13 +3,16 @@
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
-// A workspace is a galaxy and its tasks are planets: the empty-board message is drawn
-// with real dots that fly in from a spiral while the camera pulls back, then softly glow.
+// A workspace is a galaxy and its tasks are planets: text is drawn with real dots that
+// fly in from a spiral spanning the whole page while the camera pulls back, then glow.
+// The box keeps the text's place in the layout; the dots live on a full-screen canvas
+// so nothing clips them. Their color is the box's CSS `color`, so themes apply.
 
 interface Dot {
+  // Target, relative to the box.
   x: number
   y: number
-  // Where it starts in the spiral, as distance and angle from the center.
+  // Start in the spiral, as distance and angle from the text's center.
   r: number
   angle: number
   delay: number
@@ -21,54 +24,47 @@ const MAX_DELAY_MS = 600
 const ZOOM_FROM = 3.2
 // How far the spiral turns while the planets settle, in radians.
 const SPIN = 1.6
-// Soft edges, so the zoomed-in spiral fades out instead of being cut by the canvas box.
-const FADE =
-  'linear-gradient(to bottom, transparent, black 14%, black 86%, transparent), linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
-const EDGE_FADE = {
-  maskImage: FADE,
-  maskComposite: 'intersect',
-  WebkitMaskImage: FADE,
-  WebkitMaskComposite: 'source-in',
-} as const
-
 const easeOut = (t: number) => 1 - (1 - t) ** 3
 
 export function GalaxyText({
   lines,
-  color = '#CBD5E1',
   maxFontSize = 150,
   className,
 }: {
   lines: string[]
-  color?: string
   maxFontSize?: number
   className?: string
 }) {
+  const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const text = lines.join('\n')
 
   useEffect(() => {
+    const box = boxRef.current
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx) return
+    if (!box || !canvas || !ctx) return
     const rows = text.split('\n')
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches
-    const fontFamily = getComputedStyle(canvas).fontFamily
+    const fontFamily = getComputedStyle(box).fontFamily
 
     let dots: Dot[] = []
-    let width = 0
-    let height = 0
-    let cx = 0
-    let cy = 0
     let radius = 2
     let start = 0
     let frame = 0
 
+    const sizeCanvas = () => {
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = Math.round(window.innerWidth * dpr)
+      canvas.height = Math.round(window.innerHeight * dpr)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
     // Rasterizes the text off screen and keeps one dot per grid cell that falls on a letter.
     const layout = (skipIntro: boolean) => {
-      width = canvas.clientWidth
+      const width = box.clientWidth
       if (!width) return
       const probe = document.createElement('canvas').getContext('2d')!
       let size = Math.min(maxFontSize, width / 5)
@@ -77,16 +73,9 @@ export function GalaxyText({
       size = Math.max(28, size * Math.min(1, (width * 0.92) / widest))
       const step = Math.max(4, Math.round(size / 16))
       const lineHeight = size * 1.05
-      // Room above and below so the spiral isn't clipped while it's zoomed in.
-      const pad = size * 0.5
-      height = Math.ceil(lineHeight * rows.length + pad * 2)
+      const height = Math.ceil(lineHeight * rows.length + step * 2)
+      box.style.height = `${height}px`
       radius = step * 0.38
-
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = Math.round(width * dpr)
-      canvas.height = Math.round(height * dpr)
-      canvas.style.height = `${height}px`
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
       const off = document.createElement('canvas')
       off.width = width
@@ -96,13 +85,12 @@ export function GalaxyText({
       o.textAlign = 'center'
       o.textBaseline = 'middle'
       rows.forEach((row, i) =>
-        o.fillText(row, width / 2, pad + lineHeight * (i + 0.5))
+        o.fillText(row, width / 2, step + lineHeight * (i + 0.5))
       )
       const alpha = o.getImageData(0, 0, width, height).data
 
-      cx = width / 2
-      cy = height / 2
-      const maxR = Math.hypot(width, height) / 2
+      // The spiral spans the page, not just the text.
+      const maxR = Math.hypot(window.innerWidth, window.innerHeight) / 2
       dots = []
       for (let y = step / 2; y < height; y += step) {
         for (let x = step / 2; x < width; x += step) {
@@ -111,12 +99,11 @@ export function GalaxyText({
           // Two-armed spiral, flattened like a galaxy seen at an angle.
           const r = Math.random() ** 0.6 * maxR
           const arm = Math.random() < 0.5 ? 0 : Math.PI
-          const angle = arm + r * 0.012 + (Math.random() - 0.5) * 0.7
           dots.push({
             x,
             y,
             r,
-            angle,
+            angle: arm + r * 0.008 + (Math.random() - 0.5) * 0.7,
             delay: (r / maxR) * MAX_DELAY_MS,
             phase: Math.random() * Math.PI * 2,
           })
@@ -127,18 +114,23 @@ export function GalaxyText({
 
     const draw = (now: number) => {
       const elapsed = reduceMotion ? Infinity : now - start
-      ctx.clearRect(0, 0, width, height)
+      // Read each frame: the box can move (entry animations) and the theme can change.
+      const rect = box.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
       ctx.save()
       // Camera starts close, so the planets read as circles, then pulls back.
       const zoom =
         1 +
         (ZOOM_FROM - 1) *
           (1 - easeOut(Math.min(1, elapsed / (ASSEMBLE_MS + MAX_DELAY_MS))))
-      ctx.translate(width / 2, height / 2)
+      ctx.translate(cx, cy)
       ctx.scale(zoom, zoom)
-      ctx.translate(-width / 2, -height / 2)
+      ctx.translate(-cx, -cy)
 
-      ctx.fillStyle = color
+      ctx.fillStyle = getComputedStyle(box).color
       ctx.beginPath()
       for (const d of dots) {
         const t = easeOut(
@@ -148,8 +140,8 @@ export function GalaxyText({
         const a = d.angle + SPIN * (1 - t)
         const fromX = cx + Math.cos(a) * d.r
         const fromY = cy + Math.sin(a) * d.r * 0.45
-        const x = fromX + (d.x - fromX) * t
-        const y = fromY + (d.y - fromY) * t
+        const x = fromX + (rect.left + d.x - fromX) * t
+        const y = fromY + (rect.top + d.y - fromY) * t
         const r = reduceMotion
           ? radius
           : radius * (0.82 + 0.18 * Math.sin(now / 700 + d.phase))
@@ -158,34 +150,36 @@ export function GalaxyText({
       }
       ctx.fill()
       ctx.restore()
-      if (!reduceMotion) frame = requestAnimationFrame(draw)
+      frame = requestAnimationFrame(draw)
     }
 
+    sizeCanvas()
     layout(false)
     frame = requestAnimationFrame(draw)
 
     // Re-flow on resize without replaying the intro.
-    let lastWidth = canvas.clientWidth
-    const observer = new ResizeObserver(() => {
-      if (canvas.clientWidth === lastWidth) return
-      lastWidth = canvas.clientWidth
+    const onResize = () => {
+      sizeCanvas()
       layout(true)
-      if (reduceMotion) draw(performance.now())
-    })
-    observer.observe(canvas)
+    }
+    window.addEventListener('resize', onResize)
 
     return () => {
       cancelAnimationFrame(frame)
-      observer.disconnect()
+      window.removeEventListener('resize', onResize)
     }
-  }, [text, color, maxFontSize])
+  }, [text, maxFontSize])
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={boxRef}
       aria-hidden
-      className={cn('block w-full font-sans', className)}
-      style={EDGE_FADE}
-    />
+      className={cn('relative w-full font-sans', className)}
+    >
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none fixed inset-0 h-screen w-screen"
+      />
+    </div>
   )
 }

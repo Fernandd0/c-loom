@@ -78,7 +78,8 @@ export default function TaskCircle({
       onClick={() => setClickCount((prev) => prev + 1)}
       className={cn(
         'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full p-4 text-center font-bold text-white transition-[width,height,box-shadow] duration-300 ease-in-out',
-        urgency === 'overdue' && 'ring-4 ring-[#FF3B30] ring-offset-2'
+        urgency === 'overdue' &&
+          'ring-4 ring-[#FF3B30] ring-offset-2 ring-offset-transparent'
       )}
       style={{
         width: size,

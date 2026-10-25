@@ -1,6 +1,5 @@
 'use client'
 
-import { Globe } from 'lucide-react'
 import { CONTACT_URL, LegalFooter } from '@/components/LegalPage'
 import { SettingsCaption, SettingsGroup, SettingsItem } from '../SettingsRow'
 
@@ -8,10 +7,10 @@ export function ContactTab() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
       <div className="text-center">
-        <h2 className="text-xl font-semibold tracking-tight text-[#1C1C1E]">
+        <h2 className="text-xl font-semibold tracking-tight text-(--fg)">
           C-LOOM
         </h2>
-        <p className="mt-1 text-[14px] text-[#8E8E93]">
+        <p className="mt-1 text-[14px] text-(--fg-3)">
           A task board made of circles. Made by Fernando.
         </p>
       </div>
@@ -21,17 +20,10 @@ export function ContactTab() {
         <SettingsGroup>
           <SettingsItem
             href={CONTACT_URL}
-            icon={<Globe />}
-            tint="#007AFF"
-            title="fernandojs.com"
-            trailing={<Chevron />}
-          />
-          <SettingsItem
-            href="https://x.com/Fernandddd0"
             icon={<XLogo />}
             tint="#1C1C1E"
             title="X"
-            note="@Fernandddd0"
+            note="@fernando_script"
             trailing={<Chevron />}
           />
           <SettingsItem
@@ -55,7 +47,7 @@ function Chevron() {
     <svg
       aria-hidden
       viewBox="0 0 8 14"
-      className="h-3 w-2 text-[#C7C7CC]"
+      className="h-3 w-2 text-(--fg-4)"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}

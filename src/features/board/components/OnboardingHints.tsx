@@ -4,6 +4,9 @@ import { useEffect, useId } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
+// The "First-run hints" setting (on by default). A click only hides them for this visit.
+export const HINTS_KEY = 'c-loom-hints'
+
 interface OnboardingHintsProps {
   show: boolean
   onDismiss: () => void
@@ -28,7 +31,7 @@ export function OnboardingHints({ show, onDismiss }: OnboardingHintsProps) {
         <motion.div
           aria-hidden
           data-testid="onboarding-hints"
-          className="font-hand pointer-events-none fixed inset-0 z-30 text-[#A1A1AA] select-none"
+          className="font-hand pointer-events-none fixed inset-0 z-30 text-(--hint) select-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.25 } }}

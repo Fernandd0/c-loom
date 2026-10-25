@@ -12,7 +12,7 @@ export function Loader() {
         transition={{ duration: 0.5 }}
       >
         <motion.div
-          className="absolute inset-0 rounded-full border-4 border-[#E5E5EA]"
+          className="absolute inset-0 rounded-full border-4 border-(--line)"
           style={{ borderTopColor: 'transparent' }}
         />
         <motion.div

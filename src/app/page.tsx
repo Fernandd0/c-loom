@@ -19,7 +19,10 @@ import { LandingPage } from './components/LandingPage'
 import { ErrorToast } from './components/ErrorToast'
 import { GuestImportBanner } from './components/GuestImportBanner'
 import { CategoryBar } from '@/features/board/components/CategoryBar'
-import { OnboardingHints } from '@/features/board/components/OnboardingHints'
+import {
+  HINTS_KEY,
+  OnboardingHints,
+} from '@/features/board/components/OnboardingHints'
 import { GalaxyText } from '@/features/board/components/GalaxyText'
 
 export default function Home() {
@@ -118,12 +121,11 @@ export default function Home() {
     ? categoryFilter
     : ''
 
-  // First-run pointers on an empty board; gone for good after the first click or key.
-  const [onboarded, setOnboarded] = useStickyState(false, 'c-loom-onboarded')
-  const dismissOnboarding = useCallback(
-    () => setOnboarded(true),
-    [setOnboarded]
-  )
+  // Hand-drawn pointers on an empty board, while the setting is on (the default).
+  // The first click or key hides them for this visit only.
+  const [hintsOn] = useStickyState(true, HINTS_KEY)
+  const [hintsDismissed, setHintsDismissed] = useState(false)
+  const dismissHints = useCallback(() => setHintsDismissed(true), [])
 
   // Look the task up on every render so the detail dialog reflects saved edits.
   const selectedTask = currentTasks.find((t) => t.id === selectedTaskId)
@@ -187,7 +189,7 @@ export default function Home() {
 
   if (!isLoaded) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--page)">
         <Loader />
       </div>
     )
@@ -217,7 +219,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative flex min-h-screen w-full overflow-hidden bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
+    <main className="relative flex min-h-screen w-full overflow-hidden bg-(--page) selection:bg-indigo-100 selection:text-indigo-900">
       <Sidebar
         boards={boards}
         currentBoardId={currentBoardId}
@@ -251,7 +253,7 @@ export default function Home() {
             />
           </div>
         ) : null}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden in-data-[theme=galaxy]:hidden">
           <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vw] rounded-full bg-indigo-200/20 blur-[120px]" />
           <div className="absolute right-[-10%] bottom-[-10%] h-[50vh] w-[50vw] rounded-full bg-rose-200/20 blur-[120px]" />
         </div>
@@ -301,7 +303,7 @@ export default function Home() {
           )}
 
           {currentTasks.length === 0 && (
-            <div className="mt-6 px-2 text-center text-slate-300 sm:mt-10">
+            <div className="mt-6 px-2 text-center text-(--dot-soft) sm:mt-10">
               <p className="sr-only">All clear on {currentBoard?.name}.</p>
               <GalaxyText lines={['All clear on', `${currentBoard?.name}.`]} />
               {/* <p className="-mt-2 text-xl opacity-70 sm:-mt-4 sm:text-2xl md:text-3xl">
@@ -312,13 +314,13 @@ export default function Home() {
         </div>
 
         <OnboardingHints
-          show={!onboarded && currentTasks.length === 0}
-          onDismiss={dismissOnboarding}
+          show={hintsOn && !hintsDismissed && currentTasks.length === 0}
+          onDismiss={dismissHints}
         />
 
         <div className="pointer-events-none fixed bottom-0 left-0 z-40 flex w-full justify-center pt-8 sm:pt-12">
           <div className="pointer-events-auto relative">
-            <div className="pointer-events-none absolute inset-0 -top-20 -bottom-4 left-1/2 w-[120%] -translate-x-1/2 bg-gradient-to-t from-white/40 via-white/20 to-transparent backdrop-blur-[2px]" />
+            <div className="pointer-events-none absolute inset-0 -top-20 -bottom-4 left-1/2 w-[120%] -translate-x-1/2 bg-gradient-to-t from-white/40 via-white/20 to-transparent backdrop-blur-[2px] in-data-[theme=galaxy]:hidden" />
             <div className="relative">
               <AddTaskDialog
                 categories={categories}

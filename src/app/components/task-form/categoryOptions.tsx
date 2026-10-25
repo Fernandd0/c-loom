@@ -71,9 +71,9 @@ export function ColorSwatches({
           aria-label={c.name}
           aria-pressed={value === c.value}
           className={cn(
-            'h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-[#F2F2F7] transition-transform',
+            'h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-(--surface-2) transition-transform',
             value === c.value
-              ? 'scale-110 ring-[#1C1C1E]/40'
+              ? 'scale-110 ring-(--fg)/40'
               : 'ring-transparent hover:scale-110'
           )}
           style={{ backgroundColor: c.value }}
@@ -103,8 +103,8 @@ export function IconPicker({
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-lg transition-all',
             value === iconValue
-              ? 'bg-white text-[#1C1C1E] shadow-sm'
-              : 'text-[#8E8E93] hover:bg-white/70'
+              ? 'bg-(--surface) text-(--fg) shadow-sm'
+              : 'text-(--fg-3) hover:bg-(--hover)'
           )}
         >
           <Icon className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function CategoryCreator({
   }
 
   return (
-    <div className="animate-in fade-in zoom-in-95 space-y-3 rounded-2xl bg-[#F2F2F7] p-3 duration-150">
+    <div className="animate-in fade-in zoom-in-95 space-y-3 rounded-2xl bg-(--surface-2) p-3 duration-150">
       <div className="flex gap-2">
         <Input
           value={name}
@@ -162,13 +162,13 @@ export function CategoryCreator({
           placeholder="Category name"
           maxLength={50}
           autoFocus={autoFocus}
-          className="h-9 bg-white text-[13px]"
+          className="h-9 bg-(--surface) text-[13px]"
         />
         <button
           type="button"
           onClick={handleCreate}
           disabled={!name.trim() || isSaving}
-          className="h-9 shrink-0 rounded-xl bg-[#1C1C1E] px-4 text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
+          className="h-9 shrink-0 rounded-xl bg-(--ink) px-4 text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
         >
           Add
         </button>

@@ -79,27 +79,27 @@ export function DeadlineField({ value, onChange }: DeadlineFieldProps) {
           <span
             className={cn(
               'font-medium',
-              isOverdue(deadline) ? 'text-[#FF3B30]' : 'text-[#3C3C43]'
+              isOverdue(deadline) ? 'text-[#FF3B30]' : 'text-(--fg-2)'
             )}
           >
             Due {formatDeadline(deadline)}
             {isOverdue(deadline) && ' · already passed'}
           </span>
           {value.time ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F2F2F7] py-0.5 pr-1 pl-2.5">
-              <Clock className="h-3.5 w-3.5 text-[#8E8E93]" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-(--surface-2) py-0.5 pr-1 pl-2.5">
+              <Clock className="h-3.5 w-3.5 text-(--fg-3)" />
               <input
                 type="time"
                 aria-label="Time"
                 value={value.time}
                 onChange={(e) => onChange({ ...value, time: e.target.value })}
-                className="bg-transparent text-[13px] font-semibold text-[#1C1C1E] outline-none"
+                className="bg-transparent text-[13px] font-semibold text-(--fg) outline-none"
               />
               <button
                 type="button"
                 aria-label="Remove time"
                 onClick={() => onChange({ ...value, time: '' })}
-                className="rounded-full p-0.5 text-[#8E8E93] hover:bg-[#E5E5EA] hover:text-[#1C1C1E]"
+                className="rounded-full p-0.5 text-(--fg-3) hover:bg-(--surface-3) hover:text-(--fg)"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -108,7 +108,7 @@ export function DeadlineField({ value, onChange }: DeadlineFieldProps) {
             <button
               type="button"
               onClick={() => onChange({ ...value, time: DEFAULT_TIME })}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-[#007AFF] hover:bg-[#007AFF]/10"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-(--accent) hover:bg-[#007AFF]/10"
             >
               <Clock className="h-3.5 w-3.5" />
               Add time

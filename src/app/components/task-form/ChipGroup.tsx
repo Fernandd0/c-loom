@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils'
 
 export const chipClass = (selected: boolean) =>
   cn(
-    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/30',
+    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-(--fg)/30',
     selected
-      ? 'bg-[#1C1C1E] text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)]'
-      : 'bg-[#F2F2F7] text-[#3C3C43] hover:bg-[#E5E5EA]'
+      ? 'bg-(--ink) text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)]'
+      : 'bg-(--surface-2) text-(--fg-2) hover:bg-(--surface-3)'
   )
 
 interface ChipGroupProps<T extends string | number> {
@@ -49,7 +49,7 @@ export function FieldLabel({
   children: React.ReactNode
 }) {
   return (
-    <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold tracking-wide text-[#8E8E93] uppercase">
+    <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold tracking-wide text-(--fg-3) uppercase">
       <Icon className="h-3.5 w-3.5" />
       {children}
     </div>

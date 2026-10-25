@@ -34,7 +34,7 @@ export function ErrorToast({
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
-          className="fixed top-4 left-1/2 z-[60] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-2xl bg-[#1C1C1E] px-4 py-3 text-[14px] text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+          className="fixed top-4 left-1/2 z-[60] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-2xl bg-(--ink) px-4 py-3 text-[14px] text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
         >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#FF453A]" />
           <p className="flex-1">{message}</p>

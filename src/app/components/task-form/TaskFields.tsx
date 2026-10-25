@@ -87,7 +87,7 @@ export function TaskFields({
             style={{ backgroundColor: category?.color ?? '#C7C7CC' }}
           />
           {category?.name ?? 'No category'}
-          <ChevronDown className="h-3.5 w-3.5 text-[#8E8E93]" />
+          <ChevronDown className="h-3.5 w-3.5 text-(--fg-3)" />
         </PopoverTrigger>
         <PopoverContent align="start" className={panelClass}>
           <FieldLabel icon={Tag}>Category</FieldLabel>
@@ -110,8 +110,8 @@ export function TaskFields({
         >
           <Calendar className="h-3.5 w-3.5" />
           {deadline ? formatDeadline(deadline) : 'No date'}
-          {repeats && <Repeat className="h-3.5 w-3.5 text-[#8E8E93]" />}
-          <ChevronDown className="h-3.5 w-3.5 text-[#8E8E93]" />
+          {repeats && <Repeat className="h-3.5 w-3.5 text-(--fg-3)" />}
+          <ChevronDown className="h-3.5 w-3.5 text-(--fg-3)" />
         </PopoverTrigger>
         <PopoverContent align="start" className={cn(panelClass, 'space-y-4')}>
           <div>
@@ -137,7 +137,7 @@ export function TaskFields({
                 onChange={(recurrence) => onChange({ recurrence })}
               />
               {repeats && (
-                <p className="mt-2 text-[12px] text-[#8E8E93]">
+                <p className="mt-2 text-[12px] text-(--fg-3)">
                   {recurrenceLabel(value.recurrence, deadline)}
                 </p>
               )}
@@ -159,7 +159,7 @@ export function TaskFields({
             style={{ color: PRIORITY_COLORS[level.label] }}
           />
           {level.label}
-          <ChevronDown className="h-3.5 w-3.5 text-[#8E8E93]" />
+          <ChevronDown className="h-3.5 w-3.5 text-(--fg-3)" />
         </PopoverTrigger>
         <PopoverContent align="start" className={panelClass}>
           <FieldLabel icon={Flag}>Priority</FieldLabel>
@@ -172,7 +172,7 @@ export function TaskFields({
               close()
             }}
           />
-          <p className="mt-2 text-[12px] text-[#8E8E93]">
+          <p className="mt-2 text-[12px] text-(--fg-3)">
             Higher priority starts bigger and grows faster.
           </p>
         </PopoverContent>
@@ -182,7 +182,7 @@ export function TaskFields({
 }
 
 const pillClass =
-  'inline-flex h-8 items-center gap-1.5 rounded-full bg-[#F2F2F7] px-3 text-[13px] font-semibold text-[#1C1C1E] outline-none transition-colors hover:bg-[#E5E5EA] focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/30 data-[state=open]:bg-[#E5E5EA]'
+  'inline-flex h-8 items-center gap-1.5 rounded-full bg-(--surface-2) px-3 text-[13px] font-semibold text-(--fg) outline-none transition-colors hover:bg-(--surface-3) focus-visible:ring-2 focus-visible:ring-(--fg)/30 data-[state=open]:bg-(--surface-3)'
 
 const panelClass =
-  'w-[min(22rem,calc(100vw-2rem))] rounded-2xl border-[#E5E5EA] bg-white p-4 shadow-[0_4px_16px_rgba(0,0,0,0.12),0_12px_32px_rgba(0,0,0,0.12)]'
+  'w-[min(22rem,calc(100vw-2rem))] rounded-2xl border-(--line) bg-(--surface) p-4 shadow-[0_4px_16px_rgba(0,0,0,0.12),0_12px_32px_rgba(0,0,0,0.12)]'

@@ -121,7 +121,7 @@ export function TaskDetailDialog({
                     aria-label="Task title"
                     maxLength={500}
                     autoFocus
-                    className="-mx-2 w-full rounded-lg bg-[#F2F2F7] px-2 py-1 text-3xl font-bold tracking-tight outline-none sm:text-4xl"
+                    className="-mx-2 w-full rounded-lg bg-(--surface-2) px-2 py-1 text-3xl font-bold tracking-tight outline-none sm:text-4xl"
                     style={{ color }}
                   />
                 </>
@@ -132,7 +132,7 @@ export function TaskDetailDialog({
                       type="button"
                       onClick={() => setTitleDraft(task.title)}
                       title="Edit title"
-                      className="-mx-2 w-full rounded-lg px-2 py-1 text-left text-3xl font-bold tracking-tight break-words transition-colors hover:bg-[#F2F2F7] sm:text-4xl"
+                      className="-mx-2 w-full rounded-lg px-2 py-1 text-left text-3xl font-bold tracking-tight break-words transition-colors hover:bg-(--surface-2) sm:text-4xl"
                       style={{ color }}
                     >
                       {task.title}
@@ -159,8 +159,8 @@ export function TaskDetailDialog({
                   <p className="font-medium text-[#FF3B30]">Overdue</p>
                 )}
                 {deadline && task.recurrence !== 'never' && (
-                  <p className="flex items-center gap-1.5 text-[#3C3C43]">
-                    <Repeat className="h-3.5 w-3.5 text-[#8E8E93]" />
+                  <p className="flex items-center gap-1.5 text-(--fg-2)">
+                    <Repeat className="h-3.5 w-3.5 text-(--fg-3)" />
                     {recurrenceLabel(task.recurrence, deadline)}
                   </p>
                 )}
@@ -179,21 +179,21 @@ export function TaskDetailDialog({
                 autoFocus={
                   descriptionDraft.current !== null && !task.description
                 }
-                className="-mx-2 w-full resize-none rounded-lg bg-transparent px-2 py-1 text-[15px] whitespace-pre-wrap text-[#3C3C43] outline-none placeholder:text-[#C7C7CC] hover:bg-[#F2F2F7] focus:bg-[#F2F2F7]"
+                className="-mx-2 w-full resize-none rounded-lg bg-transparent px-2 py-1 text-[15px] whitespace-pre-wrap text-(--fg-2) outline-none placeholder:text-(--fg-4) hover:bg-(--surface-2) focus:bg-(--surface-2)"
               />
             ) : (
               <button
                 type="button"
                 onClick={() => setDescriptionDraft('')}
-                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#8E8E93] hover:text-[#1C1C1E]"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-(--fg-3) hover:text-(--fg)"
               >
                 <AlignLeft className="h-3.5 w-3.5" />
                 Add details
               </button>
             )}
 
-            <div className="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
-              <span className="inline-flex items-center gap-1.5 text-[12px] text-[#8E8E93]">
+            <div className="flex items-center justify-between gap-4 border-t border-(--line) pt-4">
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-(--fg-3)">
                 <Clock className="h-3.5 w-3.5" />
                 Created {formatAge(task.createdAt)}
               </span>
@@ -202,7 +202,7 @@ export function TaskDetailDialog({
                   onDelete(task.id)
                   onOpenChange(false)
                 }}
-                className="h-9 rounded-md border border-slate-200 bg-white px-4 text-sm text-slate-600 shadow-sm transition-colors hover:border-red-100 hover:bg-slate-50 hover:text-red-600"
+                className="h-9 rounded-md border border-(--line) bg-(--surface) px-4 text-sm text-(--fg-2) shadow-sm transition-colors hover:border-[#FF3B30]/30 hover:bg-(--page) hover:text-[#FF3B30]"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete

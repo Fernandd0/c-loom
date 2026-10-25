@@ -10,7 +10,7 @@ export function Kbd({ children, className }: KbdProps) {
   return (
     <kbd
       className={cn(
-        'inline-flex items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm',
+        'inline-flex items-center justify-center rounded-md border border-(--line) bg-(--surface-2) px-2.5 py-1 text-xs font-bold text-(--fg-2) shadow-sm',
         className
       )}
     >

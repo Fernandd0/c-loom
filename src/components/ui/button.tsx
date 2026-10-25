@@ -10,16 +10,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-[#E5E5EA] text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(0,0,0,0.06)] hover:bg-[#D1D1D6] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_3px_6px_rgba(0,0,0,0.08)] active:scale-[0.98] active:shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+          'bg-(--surface-3) text-(--fg) shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(0,0,0,0.06)] hover:bg-(--surface-3) hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_3px_6px_rgba(0,0,0,0.08)] active:scale-[0.98] active:shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
         destructive:
           'bg-[#FF3B30] text-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_4px_rgba(255,59,48,0.15)] hover:bg-[#D70015] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_3px_6px_rgba(255,59,48,0.2)] active:scale-[0.98]',
         outline:
-          'border border-[#D1D1D6] bg-white text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-[#F9F9F9] hover:border-[#C7C7CC] active:scale-[0.98]',
+          'border border-(--line-strong) bg-(--surface) text-(--fg) shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-(--surface-2) hover:border-(--line-strong) active:scale-[0.98]',
         secondary:
-          'bg-[#F2F2F7] text-[#1C1C1E] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-[#E5E5EA] active:scale-[0.98]',
+          'bg-(--surface-2) text-(--fg) shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-(--surface-3) active:scale-[0.98]',
         ghost:
-          'text-[#3C3C43] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] active:scale-[0.98]',
-        link: 'text-[#3C3C43] underline-offset-4 hover:underline',
+          'text-(--fg-2) hover:bg-(--surface-2) active:bg-(--surface-3) active:scale-[0.98]',
+        link: 'text-(--fg-2) underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-11 px-5 py-3',

@@ -15,7 +15,7 @@ import {
 
 // Hand-drawn notes for signed-out visitors, like a welcome screen. They appear once the
 // title has assembled, never block anything, and only show where there is room (lg+).
-const HINTS = 'font-hand pointer-events-none select-none text-[#A1A1AA]'
+const HINTS = 'font-hand pointer-events-none select-none text-(--hint)'
 const HINT_DELAY = 2.2
 
 interface LandingPageProps {
@@ -67,7 +67,7 @@ export function LandingPage({
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--glass) backdrop-blur-sm">
         <Loader />
       </div>
     )
@@ -97,7 +97,7 @@ export function LandingPage({
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-[#F5F5F7] p-6 pb-16 selection:bg-black/10">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-(--page) p-6 pb-16 selection:bg-black/10">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -108,11 +108,10 @@ export function LandingPage({
         <h1 className="sr-only">{user ? `Welcome, ${firstName}` : 'C-LOOM'}</h1>
         <div
           aria-hidden
-          className="relative -my-6 w-full sm:w-[min(60rem,100vw)]"
+          className="relative mb-4 w-full text-(--fg) sm:w-[min(60rem,100vw)]"
         >
           <GalaxyText
             lines={user ? ['Welcome,', `${firstName}.`] : ['C-LOOM']}
-            color="#1C1C1E"
             maxFontSize={user ? 72 : 120}
           />
           {!user && (
@@ -136,7 +135,7 @@ export function LandingPage({
 
         <motion.p
           variants={itemVariants}
-          className="mb-12 text-xl leading-relaxed font-medium whitespace-pre-line text-[#86868b] sm:text-2xl"
+          className="mb-12 text-xl leading-relaxed font-medium whitespace-pre-line text-(--fg-3) sm:text-2xl"
         >
           {user
             ? 'Your universe is ready.\nStart it with a galaxy.'
@@ -150,7 +149,7 @@ export function LandingPage({
           {hasLocalBoards ? (
             <button
               onClick={onContinueLocal}
-              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-(--ink) px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-(--ink-hover) hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
             >
               <span>Continue on this device</span>
               {localTaskCount > 0 && (
@@ -191,7 +190,7 @@ export function LandingPage({
               )}
               <button
                 onClick={onCreateWorkspace}
-                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-(--ink) px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-(--ink-hover) hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
               >
                 <Orbit size={18} />
                 <span>Create your first galaxy</span>
@@ -218,7 +217,7 @@ export function LandingPage({
               </div>
               <button
                 onClick={handleLogin}
-                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#8E8E93] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.05] transition-all hover:bg-slate-50 hover:text-[#1C1C1E] hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-(--surface) px-8 text-[15px] font-semibold text-(--fg-3) shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] ring-1 ring-(--line) transition-all hover:bg-(--page) hover:text-(--fg) hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
               >
                 <span>Sign in to Sync</span>
               </button>
@@ -236,13 +235,13 @@ export function LandingPage({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
               </span>
-              <span className="font-geist-mono text-xs font-medium tracking-wider text-[#86868b] uppercase">
+              <span className="font-geist-mono text-xs font-medium tracking-wider text-(--fg-3) uppercase">
                 {userCount !== null
                   ? `${userCount}/100 Users`
                   : 'Limited Spots'}
               </span>
             </div>
-            <p className="max-w-[260px] text-center text-[13px] text-[#86868b]">
+            <p className="max-w-[260px] text-center text-[13px] text-(--fg-3)">
               Early access includes free unlimited synchronization. <br /> No
               account needed for local use.
             </p>

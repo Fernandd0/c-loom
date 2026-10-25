@@ -56,10 +56,10 @@ export function ManageCategoriesDialog({
       <DialogContent className="w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-md">
         <GlassCard className="max-h-[85vh] space-y-4 overflow-y-auto p-5 sm:p-6">
           <div>
-            <DialogTitle className="text-xl font-bold tracking-tight text-[#1C1C1E]">
+            <DialogTitle className="text-xl font-bold tracking-tight text-(--fg)">
               Categories
             </DialogTitle>
-            <DialogDescription className="mt-1 text-[13px] text-[#8E8E93]">
+            <DialogDescription className="mt-1 text-[13px] text-(--fg-3)">
               Rename, recolor or delete. Changes save as you go.
             </DialogDescription>
           </div>
@@ -85,7 +85,7 @@ export function ManageCategoriesDialog({
             <button
               type="button"
               onClick={() => setIsCreating(true)}
-              className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-[#C7C7CC] px-3 text-[13px] font-semibold text-[#8E8E93] transition-colors hover:border-[#8E8E93] hover:text-[#1C1C1E]"
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-(--line-strong) px-3 text-[13px] font-semibold text-(--fg-3) transition-colors hover:border-[#8E8E93] hover:text-(--fg)"
             >
               <Plus className="h-3.5 w-3.5" />
               New category
@@ -118,8 +118,8 @@ function CategoryRow({
 
   if (isConfirming) {
     return (
-      <li className="flex items-center gap-2 rounded-xl bg-[#FFF2F2] px-3 py-2 text-[13px]">
-        <span className="flex-1 text-[#3C3C43]">
+      <li className="flex items-center gap-2 rounded-xl bg-[#FF3B30]/10 px-3 py-2 text-[13px]">
+        <span className="flex-1 text-(--fg-2)">
           Delete <strong>{category.name}</strong>?
           {taskCount > 0 &&
             ` ${taskCount} ${taskCount === 1 ? 'task stays' : 'tasks stay'}, without a category.`}
@@ -127,7 +127,7 @@ function CategoryRow({
         <button
           type="button"
           onClick={() => setIsConfirming(false)}
-          className="rounded-lg px-2.5 py-1 font-semibold text-[#3C3C43] hover:bg-white"
+          className="rounded-lg px-2.5 py-1 font-semibold text-(--fg-2) hover:bg-(--surface)"
         >
           Cancel
         </button>
@@ -143,18 +143,18 @@ function CategoryRow({
   }
 
   return (
-    <li className="group flex items-center gap-2 rounded-xl px-1 py-1 hover:bg-[#F2F2F7]">
+    <li className="group flex items-center gap-2 rounded-xl px-1 py-1 hover:bg-(--surface-2)">
       <Popover>
         <PopoverTrigger
           aria-label={`Color and icon for ${category.name}`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)] outline-none focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/30"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-[0_1px_3px_rgba(0,0,0,0.15)] outline-none focus-visible:ring-2 focus-visible:ring-(--fg)/30"
           style={{ backgroundColor: category.color }}
         >
           <CategoryIcon icon={category.icon} className="h-4 w-4" />
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-auto max-w-[calc(100vw-2rem)] space-y-3 rounded-2xl border-[#E5E5EA] bg-[#F2F2F7] p-3"
+          className="w-auto max-w-[calc(100vw-2rem)] space-y-3 rounded-2xl border-(--line) bg-(--surface-2) p-3"
         >
           <ColorSwatches
             value={category.color}
@@ -177,17 +177,17 @@ function CategoryRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur()
         }}
-        className="min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1 text-[15px] font-semibold text-[#1C1C1E] outline-none focus:bg-white"
+        className="min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1 text-[15px] font-semibold text-(--fg) outline-none focus:bg-(--surface)"
       />
 
-      <span className="shrink-0 text-[12px] text-[#8E8E93] tabular-nums">
+      <span className="shrink-0 text-[12px] text-(--fg-3) tabular-nums">
         {taskCount > 0 && `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}`}
       </span>
       <button
         type="button"
         onClick={() => setIsConfirming(true)}
         aria-label={`Delete ${category.name}`}
-        className="rounded-lg p-1.5 text-[#8E8E93] transition-colors hover:bg-white hover:text-[#FF3B30]"
+        className="rounded-lg p-1.5 text-(--fg-3) transition-colors hover:bg-(--surface) hover:text-[#FF3B30]"
       >
         <Trash2 className="h-4 w-4" />
       </button>

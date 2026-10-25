@@ -123,7 +123,8 @@ export function AddTaskDialog({
     setPlainText(false)
   }
 
-  const canSubmit = !!quick.title && !!categoryId
+  // A category is optional: with none left, the task is created without one.
+  const canSubmit = !!quick.title
 
   const handleFieldsChange = (changes: Partial<TaskFieldsValue>) => {
     if (changes.categoryId !== undefined)
@@ -172,7 +173,7 @@ export function AddTaskDialog({
           type="button"
           aria-label="New task"
           aria-keyshortcuts="N Meta+Enter Control+Enter"
-          className="group flex h-24 w-48 items-center justify-center rounded-t-full border-t border-white/10 bg-[#1C1C1E] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15),0_12px_28px_rgba(0,0,0,0.2)] transition-all duration-200 outline-none hover:bg-[#2C2C2E] hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_16px_36px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-[#1C1C1E]/40 focus-visible:ring-offset-2 active:scale-[0.98] sm:h-28 sm:w-56 md:h-32 md:w-64"
+          className="group flex h-24 w-48 items-center justify-center rounded-t-full border-t border-white/10 bg-(--ink) text-white shadow-[0_2px_8px_rgba(0,0,0,0.15),0_12px_28px_rgba(0,0,0,0.2)] transition-all duration-200 outline-none hover:bg-(--ink-hover) hover:shadow-[0_4px_12px_rgba(0,0,0,0.2),0_16px_36px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-(--fg)/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] sm:h-28 sm:w-56 md:h-32 md:w-64"
         >
           {/* An SVG, not a "+" glyph: text metrics put its center off-axis when it turns. */}
           <Plus
@@ -216,11 +217,11 @@ export function AddTaskDialog({
                   placeholder="What needs doing?"
                   aria-label="Task title"
                   maxLength={500}
-                  className="h-auto border-none bg-transparent px-0 py-1 text-xl font-semibold shadow-none placeholder:text-[#C7C7CC] focus:ring-0 sm:text-2xl"
+                  className="h-auto border-none bg-transparent px-0 py-1 text-xl font-semibold shadow-none placeholder:text-(--fg-4) focus:ring-0 sm:text-2xl"
                   autoFocus
                 />
                 {parsed.matched.length > 0 && (
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-[#8E8E93]">
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-(--fg-3)">
                     <Sparkles className="h-3.5 w-3.5" />
                     {plainText ? (
                       <span>Kept as text</span>
@@ -230,7 +231,7 @@ export function AddTaskDialog({
                         {parsed.matched.map((word) => (
                           <span
                             key={word}
-                            className="rounded-md bg-[#F2F2F7] px-1.5 py-0.5 font-medium text-[#3C3C43]"
+                            className="rounded-md bg-(--surface-2) px-1.5 py-0.5 font-medium text-(--fg-2)"
                           >
                             {word}
                           </span>
@@ -240,7 +241,7 @@ export function AddTaskDialog({
                     <button
                       type="button"
                       onClick={() => setPlainText((v) => !v)}
-                      className="font-semibold text-[#007AFF] hover:underline"
+                      className="font-semibold text-(--accent) hover:underline"
                     >
                       {plainText ? 'Read it again' : 'Keep as text'}
                     </button>
@@ -254,13 +255,13 @@ export function AddTaskDialog({
                     aria-label="Description"
                     rows={2}
                     autoFocus
-                    className="mt-1 w-full resize-none bg-transparent text-[15px] text-[#3C3C43] outline-none placeholder:text-[#C7C7CC]"
+                    className="mt-1 w-full resize-none bg-transparent text-[15px] text-(--fg-2) outline-none placeholder:text-(--fg-4)"
                   />
                 ) : (
                   <button
                     type="button"
                     onClick={() => setShowDescription(true)}
-                    className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#8E8E93] hover:text-[#1C1C1E]"
+                    className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-(--fg-3) hover:text-(--fg)"
                   >
                     <AlignLeft className="h-3.5 w-3.5" />
                     Add details
@@ -275,22 +276,22 @@ export function AddTaskDialog({
                 onCreateCategory={onAddCategory}
               />
               {!title && (
-                <p className="-mt-1 text-[12px] text-[#8E8E93]">
+                <p className="-mt-1 text-[12px] text-(--fg-3)">
                   Tip: type “tomorrow 9am #work !high every week” in the title
                   to fill these in.
                 </p>
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-[#E5E5EA] bg-[#FAFAFA] px-5 py-3 sm:px-6">
-              <span className="hidden items-center gap-1 text-[12px] text-[#8E8E93] sm:flex">
+            <div className="flex items-center justify-between gap-3 border-t border-(--line) bg-(--hover) px-5 py-3 sm:px-6">
+              <span className="hidden items-center gap-1 text-[12px] text-(--fg-3) sm:flex">
                 <Kbd className={KBD}>↵</Kbd> or <Kbd className={KBD}>⌘</Kbd>
                 <Kbd className={KBD}>↵</Kbd> to create
               </span>
               <Button
                 type="submit"
                 disabled={!canSubmit}
-                className="w-full bg-[#1C1C1E] text-white hover:bg-[#2C2C2E] disabled:bg-[#1C1C1E] disabled:opacity-40 sm:w-auto sm:px-6"
+                className="w-full bg-(--ink) text-white hover:bg-(--ink-hover) disabled:bg-(--ink) disabled:opacity-40 sm:w-auto sm:px-6"
               >
                 Create task
               </Button>
