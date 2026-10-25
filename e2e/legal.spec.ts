@@ -22,6 +22,17 @@ test('the landing links to the privacy policy and terms', async ({ page }) => {
 
   await page.getByRole('link', { name: 'C-LOOM' }).click()
   await expect(
-    page.getByRole('button', { name: 'Create Workspace' })
+    page.getByRole('button', { name: 'Create your first galaxy' })
   ).toBeVisible()
+})
+
+test('the landing explains itself with hand-drawn notes', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+  for (const note of ['is a world', 'no account needed', 'on every device']) {
+    await expect(page.getByText(note).last()).toBeVisible()
+  }
+  // They never get in the way of the buttons.
+  await page.getByRole('button', { name: 'Create your first galaxy' }).click()
+  await expect(page.getByRole('button', { name: 'New task' })).toBeVisible()
 })

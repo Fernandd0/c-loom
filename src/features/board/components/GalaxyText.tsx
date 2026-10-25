@@ -16,19 +16,32 @@ interface Dot {
   phase: number
 }
 
-const COLOR = '#CBD5E1'
 const ASSEMBLE_MS = 1800
 const MAX_DELAY_MS = 600
 const ZOOM_FROM = 3.2
 // How far the spiral turns while the planets settle, in radians.
 const SPIN = 1.6
+// Soft edges, so the zoomed-in spiral fades out instead of being cut by the canvas box.
+const FADE =
+  'linear-gradient(to bottom, transparent, black 14%, black 86%, transparent), linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+const EDGE_FADE = {
+  maskImage: FADE,
+  maskComposite: 'intersect',
+  WebkitMaskImage: FADE,
+  WebkitMaskComposite: 'source-in',
+} as const
+
 const easeOut = (t: number) => 1 - (1 - t) ** 3
 
 export function GalaxyText({
   lines,
+  color = '#CBD5E1',
+  maxFontSize = 150,
   className,
 }: {
   lines: string[]
+  color?: string
+  maxFontSize?: number
   className?: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -58,7 +71,7 @@ export function GalaxyText({
       width = canvas.clientWidth
       if (!width) return
       const probe = document.createElement('canvas').getContext('2d')!
-      let size = Math.min(150, width / 5)
+      let size = Math.min(maxFontSize, width / 5)
       probe.font = `700 ${size}px ${fontFamily}`
       const widest = Math.max(...rows.map((r) => probe.measureText(r).width))
       size = Math.max(28, size * Math.min(1, (width * 0.92) / widest))
@@ -125,7 +138,7 @@ export function GalaxyText({
       ctx.scale(zoom, zoom)
       ctx.translate(-width / 2, -height / 2)
 
-      ctx.fillStyle = COLOR
+      ctx.fillStyle = color
       ctx.beginPath()
       for (const d of dots) {
         const t = easeOut(
@@ -165,13 +178,14 @@ export function GalaxyText({
       cancelAnimationFrame(frame)
       observer.disconnect()
     }
-  }, [text])
+  }, [text, color, maxFontSize])
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden
       className={cn('block w-full font-sans', className)}
+      style={EDGE_FADE}
     />
   )
 }

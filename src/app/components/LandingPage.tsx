@@ -2,11 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Plus } from 'lucide-react'
+import { ArrowRight, Orbit } from 'lucide-react'
 import { signInWithGoogle } from '@/lib/auth'
 import { Loader } from '@/components/ui/loader'
 import { User } from '@supabase/supabase-js'
 import { LegalFooter } from '@/components/LegalPage'
+import { GalaxyText } from '@/features/board/components/GalaxyText'
+import {
+  HintArrow,
+  HintNote,
+} from '@/features/board/components/OnboardingHints'
+
+// Hand-drawn notes for signed-out visitors, like a welcome screen. They appear once the
+// title has assembled, never block anything, and only show where there is room (lg+).
+const HINTS = 'font-hand pointer-events-none select-none text-[#A1A1AA]'
+const HINT_DELAY = 2.2
 
 interface LandingPageProps {
   onCreateWorkspace: () => void
@@ -25,6 +35,8 @@ export function LandingPage({
   onContinueLocal,
 }: LandingPageProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const firstName =
+    (user?.user_metadata?.name as string | undefined)?.split(' ')[0] ?? ''
   const [userCount, setUserCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -92,19 +104,43 @@ export function LandingPage({
         animate="visible"
         className="flex max-w-xl flex-col items-center text-center"
       >
-        <motion.p
-          className={`font-geist-pixel-circle text-6xl leading-tight font-medium ${user ? 'sm:text-6xl' : 'sm:text-8xl'}`}
-          variants={itemVariants}
+        {/* Your universe: the name assembles from planets, like an empty board does. */}
+        <h1 className="sr-only">{user ? `Welcome, ${firstName}` : 'C-LOOM'}</h1>
+        <div
+          aria-hidden
+          className="relative -my-6 w-full sm:w-[min(60rem,100vw)]"
         >
-          {user ? `Welcome,` : 'C-LOOM'} <br />
-          {user && user.user_metadata.name}
-        </motion.p>
+          <GalaxyText
+            lines={user ? ['Welcome,', `${firstName}.`] : ['C-LOOM']}
+            color="#1C1C1E"
+            maxFontSize={user ? 72 : 120}
+          />
+          {!user && (
+            <div className={`${HINTS} hidden lg:block`}>
+              <HintArrow
+                className="absolute top-[54px] left-[calc(50%+236px)]"
+                width={58}
+                height={40}
+                d="M52 6 C 34 2, 14 12, 6 34"
+                delay={HINT_DELAY}
+              />
+              <HintNote
+                className="top-[30px] left-[calc(50%+296px)] rotate-2 whitespace-pre"
+                delay={HINT_DELAY + 0.2}
+              >
+                each dot{'\n'}is a world
+              </HintNote>
+            </div>
+          )}
+        </div>
 
         <motion.p
           variants={itemVariants}
-          className="font-geist-sans mb-12 text-xl leading-relaxed font-medium text-[#86868b] sm:text-2xl"
+          className="mb-12 text-xl leading-relaxed font-medium whitespace-pre-line text-[#86868b] sm:text-2xl"
         >
-          {user ? '' : 'Visual task management.\nSimple. Flexible. Focused.'}
+          {user
+            ? 'Your universe is ready.\nStart it with a galaxy.'
+            : 'Every task is a world.\nEvery project, a galaxy.'}
         </motion.p>
 
         <motion.div
@@ -128,22 +164,65 @@ export function LandingPage({
               />
             </button>
           ) : (
-            <button
-              onClick={onCreateWorkspace}
-              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
-            >
-              <Plus size={18} />
-              <span>Create Workspace</span>
-            </button>
+            <div className="relative w-full sm:w-auto">
+              {!user && (
+                <div aria-hidden className={HINTS}>
+                  {/* Phones and tablets: a short note above the button. */}
+                  <HintNote
+                    className="right-3 bottom-[calc(100%+6px)] text-[18px] whitespace-pre lg:hidden"
+                    delay={HINT_DELAY}
+                  >
+                    start here, no account needed
+                  </HintNote>
+                  <HintNote
+                    className="top-1/2 right-[calc(100%+68px)] hidden -translate-y-1/2 -rotate-2 text-right whitespace-pre lg:block"
+                    delay={HINT_DELAY + 0.3}
+                  >
+                    start here,{'\n'}no account needed
+                  </HintNote>
+                  <HintArrow
+                    className="absolute top-[4px] right-[calc(100%+8px)] hidden lg:block"
+                    width={58}
+                    height={30}
+                    d="M4 22 C 20 6, 38 6, 52 14"
+                    delay={HINT_DELAY + 0.1}
+                  />
+                </div>
+              )}
+              <button
+                onClick={onCreateWorkspace}
+                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#1C1C1E] px-8 text-[15px] font-semibold text-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.2)] transition-all hover:scale-[1.02] hover:bg-[#2C2C2E] hover:shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+              >
+                <Orbit size={18} />
+                <span>Create your first galaxy</span>
+              </button>
+            </div>
           )}
 
           {!user && (
-            <button
-              onClick={handleLogin}
-              className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#8E8E93] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.05] transition-all hover:bg-slate-50 hover:text-[#1C1C1E] hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
-            >
-              <span>Sign in to Sync</span>
-            </button>
+            <div className="relative w-full sm:w-auto">
+              <div aria-hidden className={`${HINTS} hidden lg:block`}>
+                <HintArrow
+                  className="absolute top-[4px] left-[calc(100%+8px)]"
+                  width={58}
+                  height={30}
+                  d="M54 22 C 38 6, 20 6, 6 14"
+                  delay={HINT_DELAY + 0.4}
+                />
+                <HintNote
+                  className="top-1/2 left-[calc(100%+68px)] -translate-y-1/2 rotate-2 whitespace-pre"
+                  delay={HINT_DELAY + 0.6}
+                >
+                  keep your universe{'\n'}on every device
+                </HintNote>
+              </div>
+              <button
+                onClick={handleLogin}
+                className="group flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[15px] font-semibold text-[#8E8E93] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.05] transition-all hover:bg-slate-50 hover:text-[#1C1C1E] hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] active:scale-[0.98] sm:w-auto sm:min-w-[200px]"
+              >
+                <span>Sign in to Sync</span>
+              </button>
+            </div>
           )}
         </motion.div>
 

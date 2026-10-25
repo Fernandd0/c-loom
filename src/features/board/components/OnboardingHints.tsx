@@ -34,19 +34,19 @@ export function OnboardingHints({ show, onDismiss }: OnboardingHintsProps) {
           exit={{ opacity: 0, transition: { duration: 0.25 } }}
         >
           {/* Sidebar button, top left. */}
-          <Arrow
+          <HintArrow
             className="absolute top-[48px] left-[18px]"
             width={60}
             height={78}
             d="M46 72 C 26 68, 12 50, 15 10"
             delay={0.3}
           />
-          <Note className="top-[122px] left-[56px] -rotate-2" delay={0.5}>
-            Workspaces, guide{'\n'}& shortcuts
-          </Note>
+          <HintNote className="top-[122px] left-[56px] -rotate-2" delay={0.5}>
+            Galaxies, guide{'\n'}& shortcuts
+          </HintNote>
 
           {/* Category bar, top center. */}
-          <Arrow
+          <HintArrow
             className="absolute top-[58px] left-[calc(50%+70px)]"
             width={70}
             height={78}
@@ -54,28 +54,28 @@ export function OnboardingHints({ show, onDismiss }: OnboardingHintsProps) {
             delay={0.6}
           />
           {/* On phones it sits right, clear of the sidebar note. */}
-          <Note
+          <HintNote
             className="top-[140px] right-4 rotate-1 text-right sm:top-[132px] sm:right-auto sm:left-1/2 sm:-translate-x-1/2 sm:text-center"
             delay={0.8}
           >
             Pick a category{'\n'}to focus on it
-          </Note>
+          </HintNote>
 
           {/* New task button, bottom center: beside it on wider screens, above it on phones. */}
-          <Note
+          <HintNote
             className="bottom-[178px] left-1/2 -translate-x-1/2 -rotate-1 text-center sm:right-[calc(50%+184px)] sm:bottom-[76px] sm:left-auto sm:translate-x-0 sm:text-right"
             delay={1.1}
           >
             Add your first task{'\n'}or just press N
-          </Note>
-          <Arrow
+          </HintNote>
+          <HintArrow
             className="absolute bottom-[104px] left-[calc(50%+18px)] sm:hidden"
             width={54}
             height={70}
             d="M10 6 C 34 16, 38 40, 22 62"
             delay={0.9}
           />
-          <Arrow
+          <HintArrow
             // Ends just outside the button's curve, which sits above the hints.
             className="absolute right-[calc(50%+118px)] bottom-[60px] hidden sm:block"
             width={60}
@@ -89,7 +89,7 @@ export function OnboardingHints({ show, onDismiss }: OnboardingHintsProps) {
   )
 }
 
-function Note({
+export function HintNote({
   className,
   delay,
   children,
@@ -114,7 +114,7 @@ function Note({
 }
 
 // A slightly loose curve that draws itself, with an open arrowhead at the end.
-function Arrow({
+export function HintArrow({
   d,
   width,
   height,
