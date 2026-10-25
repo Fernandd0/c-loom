@@ -149,7 +149,7 @@ export function createSupabaseSource(
 
       // Only boards with tasks are worth bringing over.
       for (const board of boards.filter((b) => b.tasks.length > 0)) {
-        // Merge into a workspace with the same name (e.g. both have "My Workspace") instead of duplicating it.
+        // Merge into a workspace with the same name (e.g. both have "My Galaxy") instead of duplicating it.
         const target =
           existing.find((w) => w.id === board.id) ??
           existing.find(

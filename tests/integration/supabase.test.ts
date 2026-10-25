@@ -274,7 +274,7 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         boards: [
           {
             id: guestBoardId,
-            name: 'My Workspace',
+            name: 'My Galaxy',
             createdAt: new Date().toISOString(),
             userId: 'local',
             tasks: [
@@ -306,7 +306,7 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
       await user.source.importGuest!(snapshot) // retry must not duplicate
 
       const { boards, categories } = await user.source.load()
-      expect(boards.map((w) => w.name)).toEqual(['My Workspace'])
+      expect(boards.map((w) => w.name)).toEqual(['My Galaxy'])
       const tasks = boards[0].tasks
       expect(tasks.map((t) => t.title).sort()).toEqual(['Leg day', 'Standup'])
 
