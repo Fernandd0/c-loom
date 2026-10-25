@@ -328,15 +328,25 @@ test('a signed-out visitor with old local data starts on the landing', async ({
   ).toBeVisible()
 })
 
-test('first-run hints show on a new board and go away for good on click', async ({
+test('first-run hints: a click hides them, the setting turns them off', async ({
   page,
 }) => {
   const hints = page.getByTestId('onboarding-hints')
   await expect(hints).toBeVisible()
   await expect(hints).toContainText('or just press N')
 
+  // A click hides them for this visit; they're back next time.
   await page.mouse.click(600, 400)
   await expect(hints).toHaveCount(0)
+  await page.reload()
+  await expect(hints).toBeVisible()
+
+  // On by default in Settings; switching it off keeps them away.
+  await page.keyboard.press('Meta+,')
+  const toggle = page.getByRole('switch', { name: 'First-run hints' })
+  await expect(toggle).toHaveAttribute('aria-checked', 'true')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-checked', 'false')
   await page.reload()
   await expect(page.getByRole('button', { name: 'New task' })).toBeVisible()
   await expect(hints).toHaveCount(0)
@@ -355,4 +365,45 @@ test('⌘K and ⌘G work with the sidebar closed', async ({ page }) => {
   await expect(
     dialog.getByRole('heading', { name: 'How C-LOOM works' })
   ).toBeVisible()
+})
+
+test('Settings switches to the galaxy theme and remembers it', async ({
+  page,
+}) => {
+  const html = page.locator('html')
+  await expect(html).toHaveAttribute('data-theme', 'light')
+
+  await page.keyboard.press('Meta+,')
+  const appearance = page.getByRole('radiogroup', { name: 'Appearance' })
+  await appearance.getByRole('radio', { name: 'Galaxy' }).click()
+  await expect(html).toHaveAttribute('data-theme', 'galaxy')
+
+  // Applied before the first paint on the next load, not after hydration.
+  await page.reload()
+  await expect(html).toHaveAttribute('data-theme', 'galaxy')
+
+  await page.keyboard.press('Meta+,')
+  await appearance.getByRole('radio', { name: 'Automatic' }).click()
+  await expect(html).toHaveAttribute('data-theme', 'light')
+})
+
+// Regression: with every category deleted, "Create task" stayed disabled with no reason given.
+test('a task can be created without any category', async ({ page }) => {
+  await page.getByRole('button', { name: 'Edit categories' }).click()
+  for (const name of ['Work', 'Personal']) {
+    await page.getByRole('button', { name: `Delete ${name}` }).click()
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  }
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'New task' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Category: none' })
+  ).toBeVisible()
+  await page.getByLabel('Task title').fill('Buy milk')
+  await page.getByLabel('Task title').press('Enter')
+  await expect(page.getByText('Buy milk', { exact: true })).toBeVisible()
+  expect((await stored(page, 'Buy milk')) as unknown).toMatchObject({
+    categoryId: '',
+  })
 })
