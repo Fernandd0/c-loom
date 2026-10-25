@@ -37,8 +37,8 @@ test('lands straight on the seeded workspace, without a guest flash', async ({
   page,
 }) => {
   await page.goto('/')
-  await expect(page.getByText('All clear on My Workspace')).toBeVisible()
-  await expect(page.getByText('Create Workspace')).toHaveCount(0)
+  await expect(page.getByText('All clear on My Galaxy')).toBeVisible()
+  await expect(page.getByText('Create your first galaxy')).toHaveCount(0)
 })
 
 test('signing out goes back to the landing, not to guest data', async ({
@@ -62,7 +62,7 @@ test('signing out goes back to the landing, not to guest data', async ({
     )
   })
   await page.reload()
-  await expect(page.getByText('All clear on My Workspace')).toBeVisible()
+  await expect(page.getByText('All clear on My Galaxy')).toBeVisible()
 
   await page.getByRole('button', { name: 'Open sidebar' }).click()
   // The hover overlay can still be animating out for a moment.
@@ -145,7 +145,7 @@ test('offers to import guest tasks after signing in', async ({ page }) => {
       JSON.stringify([
         {
           id,
-          name: 'My Workspace',
+          name: 'My Galaxy',
           createdAt: new Date().toISOString(),
           userId: 'local',
           tasks: [task('Guest task', '1'), task('Leg day', gym)],

@@ -26,7 +26,7 @@ const stored = async (page: Page, title: string) =>
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await page.getByText('Create Workspace').click()
+  await page.getByText('Create your first galaxy').click()
   await expect(page.getByRole('button', { name: 'New task' })).toBeVisible()
 })
 
