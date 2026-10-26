@@ -65,6 +65,7 @@ test('signing out goes back to the landing, not to guest data', async ({
   await expect(page.getByText('All clear on My Galaxy')).toBeVisible()
 
   await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await page.getByRole('button', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(
     page.getByRole('button', { name: /Continue on this device/ })

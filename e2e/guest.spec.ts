@@ -352,9 +352,9 @@ test('first-run hints: a click hides them, the setting turns them off', async ({
   await expect(hints).toHaveCount(0)
 })
 
-// Regression: the dialogs lived inside the sidebar, so ⌘K / ⌘G did nothing while it was closed.
-test('⌘K and ⌘G work with the sidebar closed', async ({ page }) => {
-  await page.keyboard.press('Meta+k')
+// Regression: the dialogs lived inside the sidebar, so the shortcuts did nothing while it was closed.
+test('? and ⌘G work with the sidebar closed', async ({ page }) => {
+  await page.keyboard.press('?')
   const dialog = page.getByRole('dialog')
   await expect(
     dialog.getByRole('heading', { name: 'Keyboard Shortcuts' })
@@ -501,4 +501,53 @@ test('on a phone, picking a galaxy closes the drawer', async ({ page }) => {
   await page.getByRole('button', { name: 'My Galaxy', exact: true }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByText('All clear on My Galaxy.')).toBeVisible()
+})
+
+test('⌘K jumps to a galaxy or runs an action', async ({ page }) => {
+  const errors = trackConsoleErrors(page)
+  await page.keyboard.press('Meta+k')
+  const search = page.getByRole('combobox', {
+    name: 'Search galaxies and actions',
+  })
+  await expect(search).toBeFocused()
+
+  // New galaxy opens the drawer with its name field ready.
+  await search.fill('new gal')
+  await search.press('Enter')
+  const name = page.getByLabel('Galaxy name')
+  await expect(name).toBeFocused()
+  await name.fill('Side projects')
+  await name.press('Enter')
+  await page.keyboard.press('Escape')
+
+  await page.keyboard.press('Meta+k')
+  await search.fill('my')
+  await expect(
+    page.getByRole('option', { name: /My Galaxy/, selected: true })
+  ).toBeVisible()
+  await search.press('Enter')
+  await expect(page.getByText('All clear on My Galaxy.')).toBeVisible()
+
+  await page.keyboard.press('Meta+k')
+  await search.fill('task')
+  await search.press('Enter')
+  await expect(page.getByLabel('Task title')).toBeFocused()
+  // "?" is just text while typing a title.
+  await page.keyboard.type('Why?')
+  await expect(
+    page.getByRole('heading', { name: 'Keyboard Shortcuts' })
+  ).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
+test('the sidebar offers sign-in and opens settings', async ({ page }) => {
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Sign in to sync' })
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await expect(
+    page.getByRole('radiogroup', { name: 'Appearance' })
+  ).toBeVisible()
 })
