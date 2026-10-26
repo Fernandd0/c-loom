@@ -411,3 +411,94 @@ test('a task can be created without any category', async ({ page }) => {
     categoryId: '',
   })
 })
+
+test('the sidebar is a drawer that shows each galaxy’s load', async ({
+  page,
+}) => {
+  const errors = trackConsoleErrors(page)
+  await addTask(page, 'Pay rent', { due: 'Today' })
+  await addTask(page, 'Someday')
+
+  await page.keyboard.press('Meta+b')
+  const drawer = page.getByRole('dialog', { name: 'Galaxies' })
+  await expect(drawer).toBeVisible()
+  await expect(
+    drawer.getByRole('button', { name: /^My Galaxy\s*2\s*, 1 due today$/ })
+  ).toHaveAttribute('aria-current', 'page')
+
+  await page.keyboard.press('Escape')
+  await expect(drawer).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
+test('a new galaxy is named right away and 1–9 switch between them', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await page.getByRole('button', { name: 'New Galaxy' }).click()
+  const name = page.getByLabel('Galaxy name')
+  await expect(name).toBeFocused()
+  await name.fill('Side projects')
+  await name.press('Enter')
+  await expect(page.getByText('All clear on Side projects.')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('1')
+  await expect(page.getByText('All clear on My Galaxy.')).toBeVisible()
+  await page.keyboard.press('2')
+  await expect(page.getByText('All clear on Side projects.')).toBeVisible()
+})
+
+test('a galaxy is renamed and deleted from its menu', async ({ page }) => {
+  await addTask(page, 'Lonely task')
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await page.getByRole('button', { name: 'New Galaxy' }).click()
+  await page.getByLabel('Galaxy name').press('Enter')
+
+  await page.getByRole('button', { name: 'My Galaxy options' }).click()
+  await page.getByRole('button', { name: 'Rename' }).click()
+  // Escape cancels the rename and leaves the drawer open.
+  await page.getByLabel('Galaxy name').fill('Nope')
+  await page.getByLabel('Galaxy name').press('Escape')
+  await expect(page.getByRole('button', { name: 'My Galaxy 1' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Galaxies' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'My Galaxy options' }).click()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Delete “My Galaxy”?' })
+  ).toBeVisible()
+  await expect(page.getByText('Its 1 task goes with it.')).toBeVisible()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(page.getByRole('button', { name: /^My Galaxy/ })).toHaveCount(0)
+})
+
+test('a pinned sidebar stays open after a reload', async ({ page }) => {
+  await page.keyboard.press('Meta+b')
+  await page.getByRole('button', { name: 'Keep sidebar open' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Open sidebar' })).toHaveCount(
+    0
+  )
+
+  await page.reload()
+  await expect(page.getByRole('navigation', { name: 'Galaxies' })).toBeVisible()
+  await page.keyboard.press('Meta+b')
+  await expect(page.getByRole('button', { name: 'Open sidebar' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Galaxies' })).toHaveCount(
+    0
+  )
+})
+
+test('on a phone, picking a galaxy closes the drawer', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Keep sidebar open' })
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: 'New Galaxy' }).click()
+  await page.getByLabel('Galaxy name').press('Enter')
+  await page.getByRole('button', { name: 'My Galaxy', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByText('All clear on My Galaxy.')).toBeVisible()
+})
