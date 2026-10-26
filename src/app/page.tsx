@@ -184,7 +184,9 @@ export default function Home() {
   const addBoard = () => {
     const name =
       boards.length === 0 ? 'My Galaxy' : `Galaxy ${boards.length + 1}`
-    setCurrentBoardId(createBoard(name))
+    const id = createBoard(name)
+    setCurrentBoardId(id)
+    return id
   }
 
   if (!isLoaded) {
