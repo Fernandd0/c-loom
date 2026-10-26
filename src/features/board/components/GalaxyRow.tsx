@@ -7,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { MenuItem } from '@/components/ui/menu-item'
 import { cn } from '@/lib/utils'
 import type { Board } from '@/app/types'
 import { summarizeBoard, summaryLabel } from '../lib/boardSummary'
@@ -21,6 +22,10 @@ interface GalaxyRowProps {
   onRenameDone: (name: string | null) => void
   onDelete?: () => void
 }
+
+// A row in the sidebar's grouped list, with a hairline inset past the icon like iOS Settings.
+export const row =
+  'relative after:absolute after:right-0 after:bottom-0 after:left-[37px] after:h-px after:bg-(--hairline) last:after:hidden'
 
 export function GalaxyRow({
   board,
@@ -37,23 +42,21 @@ export function GalaxyRow({
 
   if (editing) {
     return (
-      <li>
+      <li className={row}>
         <RenameInput initial={board.name} onDone={onRenameDone} />
       </li>
     )
   }
 
   return (
-    <li className="group relative">
+    <li className={cn('group', row)}>
       <button
         onClick={onSelect}
         onDoubleClick={onStartRename}
         aria-current={selected ? 'page' : undefined}
         className={cn(
-          'flex h-9 w-full items-center gap-2.5 rounded-lg pr-10 pl-2.5 text-left text-[14px] transition-colors',
-          selected
-            ? 'bg-(--hover) font-semibold text-(--fg)'
-            : 'font-medium text-(--fg-2) hover:bg-(--hover)'
+          'flex h-10 w-full items-center gap-2.5 pr-10 pl-3 text-left text-[14px] text-(--fg) transition-colors outline-none hover:bg-(--hover) focus-visible:bg-(--hover)',
+          selected ? 'bg-(--hover) font-semibold' : 'font-medium'
         )}
       >
         <Orbit
@@ -95,7 +98,7 @@ export function GalaxyRow({
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
           <MenuItem
-            icon={<Pencil size={14} />}
+            icon={<Pencil />}
             onClick={() => {
               setMenuOpen(false)
               onStartRename()
@@ -105,7 +108,7 @@ export function GalaxyRow({
           </MenuItem>
           {onDelete && (
             <MenuItem
-              icon={<Trash2 size={14} />}
+              icon={<Trash2 />}
               destructive
               onClick={() => {
                 setMenuOpen(false)
@@ -118,33 +121,6 @@ export function GalaxyRow({
         </PopoverContent>
       </Popover>
     </li>
-  )
-}
-
-function MenuItem({
-  icon,
-  destructive,
-  onClick,
-  children,
-}: {
-  icon: React.ReactNode
-  destructive?: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] font-medium transition-colors',
-        destructive
-          ? 'text-[#FF3B30] hover:bg-[#FF3B30]/10'
-          : 'text-(--fg) hover:bg-(--hover)'
-      )}
-    >
-      {icon}
-      {children}
-    </button>
   )
 }
 
@@ -182,7 +158,7 @@ function RenameInput({
       }}
       onBlur={() => finish(value)}
       aria-label="Galaxy name"
-      className="h-9 w-full rounded-lg bg-(--surface) px-2.5 text-[14px] font-medium text-(--fg) shadow-[0_0_0_2px_var(--line)] outline-none focus:shadow-[0_0_0_2px_var(--fg-3)]"
+      className="h-10 w-full bg-(--surface) px-3 text-[14px] font-medium text-(--fg) shadow-[inset_0_0_0_2px_var(--fg-3)] outline-none"
     />
   )
 }

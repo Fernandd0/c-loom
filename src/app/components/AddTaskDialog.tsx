@@ -20,6 +20,7 @@ import { DeadlineValue } from './task-form/DeadlineField'
 import { TaskFields, TaskFieldsValue } from './task-form/TaskFields'
 import { Kbd } from './Kbd'
 import { parseQuickAdd } from '@/features/board/lib/quickAdd'
+import { shouldIgnorePlainKey } from '@/lib/keyboard'
 
 interface AddTaskDialogProps {
   categories: Category[]
@@ -31,6 +32,9 @@ interface AddTaskDialogProps {
     color: string,
     icon?: string
   ) => Promise<string | undefined>
+  // Controlled so other places (the ⌘K menu) can open it.
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 const EMPTY_DEADLINE: DeadlineValue = { date: '', time: '' }
@@ -41,8 +45,9 @@ export function AddTaskDialog({
   preferredCategoryId = '',
   onAddTask,
   onAddCategory,
+  open,
+  onOpenChange: setOpen,
 }: AddTaskDialogProps) {
-  const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [showDescription, setShowDescription] = useState(false)
@@ -97,19 +102,14 @@ export function AddTaskDialog({
       // Plain "N" opens it too, unless typing or another dialog is open.
       if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey)
         return
-      const target = e.target as HTMLElement | null
-      if (
-        target?.closest('input, textarea, select, [contenteditable="true"]') ||
-        document.querySelector('[role="dialog"]')
-      )
-        return
+      if (shouldIgnorePlainKey(e)) return
       e.preventDefault()
       setOpen(true)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [setOpen])
 
   const reset = () => {
     setTitle('')

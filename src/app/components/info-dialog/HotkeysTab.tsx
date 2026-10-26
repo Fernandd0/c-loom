@@ -6,11 +6,12 @@ const SHORTCUTS: { action: string; keys: string[] }[] = [
   { action: 'New task', keys: ['N'] },
   { action: 'New task, from anywhere', keys: ['⌘', '↵'] },
   { action: 'Create the task', keys: ['↵'] },
+  { action: 'Jump to a galaxy or action', keys: ['⌘', 'K'] },
   { action: 'Show or hide galaxies', keys: ['⌘', 'B'] },
   { action: 'Jump to galaxy 1–9', keys: ['1…9'] },
   { action: 'Settings', keys: ['⌘', ','] },
   { action: 'Guide', keys: ['⌘', 'G'] },
-  { action: 'Keyboard shortcuts', keys: ['⌘', 'K'] },
+  { action: 'Keyboard shortcuts', keys: ['?'] },
   { action: 'Close or cancel', keys: ['esc'] },
 ]
 

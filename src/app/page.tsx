@@ -29,6 +29,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null)
   // Until the session is known, don't render the guest view: signed-in users would see it flash.
   const [isAuthReady, setIsAuthReady] = useState(false)
+  const [addTaskOpen, setAddTaskOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -230,6 +231,7 @@ export default function Home() {
         onAddBoard={addBoard}
         onDeleteBoard={deleteBoard}
         onRenameBoard={renameBoard}
+        onNewTask={() => setAddTaskOpen(true)}
       />
       <ErrorToast message={error} onDismiss={dismissError} />
       {guestImport && !error && (
@@ -329,6 +331,8 @@ export default function Home() {
                 preferredCategoryId={activeFilter}
                 onAddTask={addTask}
                 onAddCategory={addCategory}
+                open={addTaskOpen}
+                onOpenChange={setAddTaskOpen}
               />
             </div>
           </div>

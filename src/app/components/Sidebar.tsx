@@ -1,6 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import {
   Dialog,
@@ -13,27 +19,33 @@ import {
 import {
   AlertTriangle,
   BookOpen,
-  Settings,
   Command,
   Info,
-  LogOut,
   Menu,
+  Orbit,
   PanelLeft,
   PanelLeftClose,
   Plus,
+  Settings,
+  SquarePen,
   X,
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Board } from '../types'
-import { LoginButton } from '@/components/LoginButton'
 import { InfoDialog, InfoTab, useInfoHotkeys } from './InfoDialog'
-import { SettingsGroup, SettingsRow } from './SettingsRow'
 import { useStickyState } from '../hooks/useStickyState'
-import { signOut } from '@/lib/auth'
-import { GalaxyRow } from '@/features/board/components/GalaxyRow'
+import { shouldIgnorePlainKey } from '@/lib/keyboard'
+import { AccountCard } from '@/features/auth/components/AccountCard'
+import {
+  GalaxyRow,
+  row as galaxyRow,
+} from '@/features/board/components/GalaxyRow'
+import {
+  CommandMenu,
+  type CommandItem,
+} from '@/features/board/components/CommandMenu'
 import { galaxyIndexForKey } from '@/features/board/lib/boardSummary'
 import type { User } from '@supabase/supabase-js'
-import Image from 'next/image'
 
 const PINNED_KEY = 'c-loom-sidebar-pinned'
 // Pinning pushes the board aside, so it's only offered where there's room for both.
@@ -55,43 +67,6 @@ function useMediaQuery(query: string) {
   )
 }
 
-function UserProfile({ user }: { user: User }) {
-  const name =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email?.split('@')[0]
-  return (
-    <SettingsGroup>
-      <div className="relative flex items-center gap-3 px-2.5 py-2.5 after:absolute after:right-0 after:bottom-0 after:left-[46px] after:h-px after:bg-(--hairline)">
-        {user.user_metadata?.avatar_url ? (
-          <Image
-            src={user.user_metadata.avatar_url}
-            alt=""
-            width={24}
-            height={24}
-            className="h-6 w-6 shrink-0 rounded-full"
-          />
-        ) : (
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8E8E93] text-[11px] font-semibold text-white">
-            {(name || 'U')[0].toUpperCase()}
-          </span>
-        )}
-        <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-[14px] font-medium text-(--fg)">{name}</p>
-          <p className="truncate text-[12px] text-(--fg-3)">{user.email}</p>
-        </div>
-      </div>
-      <SettingsRow
-        icon={<LogOut />}
-        tint="#FF3B30"
-        label="Sign out"
-        destructive
-        onClick={signOut}
-      />
-    </SettingsGroup>
-  )
-}
-
 interface SidebarProps {
   boards: Board[]
   currentBoardId: string
@@ -101,7 +76,39 @@ interface SidebarProps {
   onAddBoard: () => string
   onDeleteBoard?: (boardId: string) => void
   onRenameBoard?: (boardId: string, name: string) => void
+  onNewTask: () => void
 }
+
+const QUICK_LINKS: {
+  tab: InfoTab
+  label: string
+  icon: React.ReactNode
+  shortcut?: string
+  keys?: string
+}[] = [
+  {
+    tab: 'settings',
+    label: 'Settings',
+    icon: <Settings />,
+    shortcut: '⌘,',
+    keys: 'Meta+Comma',
+  },
+  {
+    tab: 'guide',
+    label: 'Guide',
+    icon: <BookOpen />,
+    shortcut: '⌘G',
+    keys: 'Meta+G',
+  },
+  {
+    tab: 'hotkeys',
+    label: 'Shortcuts',
+    icon: <Command />,
+    shortcut: '?',
+    keys: '?',
+  },
+  { tab: 'contact', label: 'About', icon: <Info /> },
+]
 
 const iconButton =
   'flex h-7 w-7 items-center justify-center rounded-md text-(--fg-3) transition-colors hover:bg-(--hover) hover:text-(--fg)'
@@ -114,11 +121,13 @@ export function Sidebar({
   onAddBoard,
   onDeleteBoard,
   onRenameBoard,
+  onNewTask,
 }: SidebarProps) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
   const [pinnedPref, setPinnedPref] = useStickyState(false, PINNED_KEY)
   const pinned = isDesktop && pinnedPref
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [commandsOpen, setCommandsOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   // Lives here, always mounted, so the dialogs and their hotkeys work with the sidebar closed.
@@ -131,30 +140,44 @@ export function Sidebar({
     else setDrawerOpen((open) => !open)
   }, [pinned, setPinnedPref])
 
-  const selectBoard = (boardId: string) => {
-    onSelectBoard(boardId)
-    // On phones the drawer covers the board, so get out of the way.
-    if (!isDesktop) setDrawerOpen(false)
-  }
+  const selectBoard = useCallback(
+    (boardId: string) => {
+      onSelectBoard(boardId)
+      // On phones the drawer covers the board, so get out of the way.
+      if (!isDesktop) setDrawerOpen(false)
+    },
+    [onSelectBoard, isDesktop]
+  )
 
-  // ⌘B toggles the sidebar; plain 1–9 jumps to a galaxy unless typing or in another dialog.
+  const addBoard = useCallback(() => {
+    // The name field lives in the sidebar, so make sure it's showing.
+    if (!pinned) setDrawerOpen(true)
+    setEditingId(onAddBoard())
+  }, [pinned, onAddBoard])
+
+  const openInfo = useCallback((tab: InfoTab) => {
+    setDrawerOpen(false)
+    setInfoTab(tab)
+  }, [])
+
+  // ⌘B toggles the sidebar, ⌘K opens the jump menu; plain 1–9 jumps to a galaxy.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+      const mod = e.metaKey || e.ctrlKey
+      if (mod && e.key.toLowerCase() === 'b') {
         e.preventDefault()
         toggle()
         return
       }
+      if (mod && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setCommandsOpen((open) => !open)
+        return
+      }
       const index = galaxyIndexForKey(e)
       const board = index === null ? undefined : boards[index]
-      if (!board) return
-      const target = e.target as HTMLElement | null
-      if (
-        target?.closest('input, textarea, select, [contenteditable="true"]') ||
-        document.querySelector('[role="dialog"]:not([data-sidebar])')
-      )
-        return
+      if (!board || shouldIgnorePlainKey(e, 'data-sidebar')) return
       e.preventDefault()
       onSelectBoard(board.id)
     }
@@ -162,10 +185,89 @@ export function Sidebar({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [toggle, boards, onSelectBoard])
 
-  const openInfo = (tab: InfoTab) => {
-    setDrawerOpen(false)
-    setInfoTab(tab)
-  }
+  const commands = useMemo<CommandItem[]>(
+    () => [
+      ...boards.map((board, i) => ({
+        id: `galaxy-${board.id}`,
+        group: 'Galaxies' as const,
+        label: board.name,
+        icon: <Orbit />,
+        detail: i < 9 ? `${i + 1}` : undefined,
+        run: () => selectBoard(board.id),
+      })),
+      {
+        id: 'new-task',
+        group: 'Actions',
+        label: 'New task',
+        keywords: ['add', 'create', 'todo'],
+        icon: <SquarePen />,
+        detail: 'N',
+        run: onNewTask,
+      },
+      {
+        id: 'new-galaxy',
+        group: 'Actions',
+        label: 'New galaxy',
+        keywords: ['add', 'create', 'workspace'],
+        icon: <Plus />,
+        run: addBoard,
+      },
+      {
+        id: 'toggle-sidebar',
+        group: 'Actions',
+        label: pinned || drawerOpen ? 'Hide galaxies' : 'Show galaxies',
+        keywords: ['sidebar'],
+        icon: <PanelLeft />,
+        detail: '⌘B',
+        run: toggle,
+      },
+      {
+        id: 'settings',
+        group: 'Actions',
+        label: 'Settings',
+        keywords: ['preferences', 'theme', 'appearance', 'dark'],
+        icon: <Settings />,
+        detail: '⌘,',
+        run: () => openInfo('settings'),
+      },
+      {
+        id: 'guide',
+        group: 'Actions',
+        label: 'Guide',
+        keywords: ['help', 'how'],
+        icon: <BookOpen />,
+        detail: '⌘G',
+        run: () => openInfo('guide'),
+      },
+      {
+        id: 'hotkeys',
+        group: 'Actions',
+        label: 'Keyboard shortcuts',
+        keywords: ['hotkeys', 'keys'],
+        icon: <Command />,
+        detail: '?',
+        run: () => openInfo('hotkeys'),
+      },
+      {
+        id: 'about',
+        group: 'Actions',
+        label: 'About',
+        keywords: ['contact'],
+        icon: <Info />,
+        run: () => openInfo('contact'),
+      },
+    ],
+    [
+      boards,
+      selectBoard,
+      onNewTask,
+      addBoard,
+      pinned,
+      drawerOpen,
+      toggle,
+      openInfo,
+    ]
+  )
 
   const finishRename = (boardId: string, name: string | null) => {
     setEditingId(null)
@@ -181,48 +283,50 @@ export function Sidebar({
 
   const panel = (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center justify-between pr-2.5 pl-4">
-        <Title className="text-[11px] font-semibold tracking-[0.06em] text-(--fg-3) uppercase">
-          Galaxies
-        </Title>
-        <div className="flex gap-0.5">
-          {pinned ? (
-            <button
-              onClick={() => setPinnedPref(false)}
+      <div className="flex h-11 shrink-0 items-center justify-end gap-0.5 px-2.5">
+        {pinned ? (
+          <button
+            onClick={() => setPinnedPref(false)}
+            className={iconButton}
+            aria-label="Close sidebar"
+            aria-keyshortcuts="Meta+B"
+          >
+            <PanelLeftClose size={16} />
+          </button>
+        ) : (
+          <>
+            {isDesktop && (
+              <button
+                onClick={() => {
+                  setPinnedPref(true)
+                  setDrawerOpen(false)
+                }}
+                className={iconButton}
+                aria-label="Keep sidebar open"
+                title="Keep sidebar open"
+              >
+                <PanelLeft size={16} />
+              </button>
+            )}
+            <DialogPrimitive.Close
               className={iconButton}
               aria-label="Close sidebar"
-              aria-keyshortcuts="Meta+B"
             >
-              <PanelLeftClose size={16} />
-            </button>
-          ) : (
-            <>
-              {isDesktop && (
-                <button
-                  onClick={() => {
-                    setPinnedPref(true)
-                    setDrawerOpen(false)
-                  }}
-                  className={iconButton}
-                  aria-label="Keep sidebar open"
-                  title="Keep sidebar open"
-                >
-                  <PanelLeft size={16} />
-                </button>
-              )}
-              <DialogPrimitive.Close
-                className={iconButton}
-                aria-label="Close sidebar"
-              >
-                <X size={16} />
-              </DialogPrimitive.Close>
-            </>
-          )}
-        </div>
+              <X size={16} />
+            </DialogPrimitive.Close>
+          </>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2" aria-label="Galaxies">
-        <ul className="space-y-0.5">
+      <div className="px-3">
+        <AccountCard user={user} galaxyCount={boards.length} />
+      </div>
+
+      <nav className="mt-5 flex-1 overflow-y-auto px-3" aria-label="Galaxies">
+        <Title className="mb-1.5 px-3 text-[11px] font-semibold tracking-[0.06em] text-(--fg-3) uppercase">
+          Galaxies
+        </Title>
+        <ul className="overflow-hidden rounded-xl bg-(--surface-2)">
           {boards.map((board) => (
             <GalaxyRow
               key={board.id}
@@ -237,52 +341,33 @@ export function Sidebar({
               }
             />
           ))}
+          <li className={galaxyRow}>
+            <button
+              onClick={addBoard}
+              className="flex h-10 w-full items-center gap-2.5 px-3 text-[14px] font-medium text-(--fg-2) transition-colors outline-none hover:bg-(--hover) focus-visible:bg-(--hover)"
+            >
+              <Plus size={15} className="text-(--fg-3)" />
+              New Galaxy
+            </button>
+          </li>
         </ul>
-
-        <button
-          onClick={() => setEditingId(onAddBoard())}
-          className="mt-0.5 flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[14px] font-medium text-(--fg-3) transition-colors hover:bg-(--hover) hover:text-(--fg)"
-        >
-          <Plus size={15} />
-          New Galaxy
-        </button>
       </nav>
 
-      <div className="space-y-3 px-2 pt-2 pb-4 sm:pb-3">
-        <SettingsGroup>
-          <SettingsRow
-            icon={<Settings />}
-            tint="#8E8E93"
-            label="Settings"
-            detail="⌘,"
-            aria-keyshortcuts="Meta+Comma"
-            onClick={() => openInfo('settings')}
-          />
-          <SettingsRow
-            icon={<BookOpen />}
-            tint="#007AFF"
-            label="Guide"
-            detail="⌘G"
-            aria-keyshortcuts="Meta+G"
-            onClick={() => openInfo('guide')}
-          />
-          <SettingsRow
-            icon={<Command />}
-            tint="#30B0C7"
-            label="Keyboard Shortcuts"
-            detail="⌘K"
-            aria-keyshortcuts="Meta+K"
-            onClick={() => openInfo('hotkeys')}
-          />
-          <SettingsRow
-            icon={<Info />}
-            tint="#5856D6"
-            label="About"
-            onClick={() => openInfo('contact')}
-          />
-        </SettingsGroup>
-
-        {user ? <UserProfile user={user} /> : <LoginButton />}
+      <div className="shrink-0 px-3 pt-3 pb-4 sm:pb-3">
+        <div className="grid grid-cols-4 overflow-hidden rounded-xl bg-(--surface-2)">
+          {QUICK_LINKS.map(({ tab, label, icon, shortcut, keys }) => (
+            <button
+              key={tab}
+              onClick={() => openInfo(tab)}
+              aria-keyshortcuts={keys}
+              title={shortcut ? `${label} (${shortcut})` : label}
+              className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-(--fg-2) transition-colors outline-none hover:bg-(--hover) focus-visible:bg-(--hover) [&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-(--fg-3)"
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -350,6 +435,12 @@ export function Sidebar({
         </DialogPrimitive.Root>
       )}
 
+      <CommandMenu
+        open={commandsOpen}
+        onOpenChange={setCommandsOpen}
+        items={commands}
+      />
+
       <InfoDialog tab={infoTab} onClose={() => setInfoTab(null)} />
 
       <Dialog
@@ -374,7 +465,7 @@ export function Sidebar({
           <DialogFooter className="sm:justify-center">
             <button
               onClick={() => setDeleteConfirmId(null)}
-              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-(--line) bg-(--surface) px-4 py-2 text-sm font-medium text-(--fg-2) transition-colors hover:bg-(--page) focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:outline-none sm:mt-0 sm:w-auto"
+              className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-xl border border-(--line) bg-(--surface) px-4 py-2 text-sm font-medium text-(--fg-2) transition-colors outline-none hover:bg-(--hover) focus-visible:ring-2 focus-visible:ring-(--fg-3) sm:mt-0 sm:w-auto"
             >
               Cancel
             </button>
@@ -385,7 +476,7 @@ export function Sidebar({
                   setDeleteConfirmId(null)
                 }
               }}
-              className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none sm:w-auto"
+              className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#FF3B30] px-4 py-2 text-sm font-semibold text-white transition-colors outline-none hover:bg-[#FF3B30]/90 focus-visible:ring-2 focus-visible:ring-[#FF3B30]/40 sm:w-auto"
             >
               Delete
             </button>

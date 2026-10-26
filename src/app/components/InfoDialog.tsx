@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { GlassCard } from './GlassCard'
+import { shouldIgnorePlainKey } from '@/lib/keyboard'
 import { GuideTab } from './info-dialog/GuideTab'
 import { HotkeysTab } from './info-dialog/HotkeysTab'
 import { ContactTab } from './info-dialog/ContactTab'
@@ -13,13 +14,18 @@ export type InfoTab = 'settings' | 'guide' | 'hotkeys' | 'contact'
 const HOTKEYS: Record<string, InfoTab> = {
   ',': 'settings',
   g: 'guide',
-  k: 'hotkeys',
 }
 
-// ⌘, opens settings, ⌘G the guide and ⌘K the shortcuts, from anywhere.
+// ⌘, opens settings and ⌘G the guide from anywhere; "?" the shortcuts, unless typing.
 export function useInfoHotkeys(open: (tab: InfoTab) => void) {
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (shouldIgnorePlainKey(e, 'data-sidebar')) return
+        e.preventDefault()
+        open('hotkeys')
+        return
+      }
       const tab = e.metaKey ? HOTKEYS[e.key.toLowerCase()] : undefined
       if (!tab) return
       e.preventDefault()
