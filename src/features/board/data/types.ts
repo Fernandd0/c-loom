@@ -1,4 +1,4 @@
-import { Board, Category, Task } from '@/app/types'
+import { Board, Category, Completion, Member, Task } from '@/app/types'
 
 export type CategoryChanges = Partial<Pick<Category, 'name' | 'color' | 'icon'>>
 
@@ -21,6 +21,9 @@ export interface BoardDataSource {
   createTask(task: Task): Promise<void>
   updateTask(taskId: string, updates: Partial<Task>): Promise<void>
   deleteTask(taskId: string): Promise<void>
+  // Deletes the task, or applies `next` (a repeating task's next date). Supabase also
+  // records it in the galaxy's history. Completing a task that is already gone is fine.
+  completeTask(taskId: string, next: Partial<Task> | null): Promise<void>
   createCategory(category: Category): Promise<void>
   updateCategory(categoryId: string, updates: CategoryChanges): Promise<void>
   // Its tasks stay, without a category.
@@ -31,6 +34,40 @@ export interface BoardDataSource {
   importGuest?(snapshot: BoardSnapshot): Promise<void>
   // Called with the full state after every change. Local storage persists here; Supabase doesn't need it.
   saveSnapshot?(snapshot: BoardSnapshot): void
-  // Notifies when the data changes outside this tab.
+  // Notifies when the data changes outside this tab (or, with Supabase, on another device).
   subscribe?(onChange: () => void): () => void
+  // Shared galaxies; only with an account.
+  sharing?: SharingApi
+}
+
+export interface Presence {
+  userId: string
+  name?: string
+  avatarUrl?: string
+}
+
+export interface SharingApi {
+  members(boardId: string): Promise<Member[]>
+  // The galaxy's invite token, or null if it isn't shared by link. Owner only.
+  invite(boardId: string): Promise<string | null>
+  // Creates the link, or replaces it so the old one stops working. Owner only.
+  resetInvite(boardId: string): Promise<string>
+  // No link at all: nobody new can join.
+  stopSharing(boardId: string): Promise<void>
+  // Joins the galaxy behind a token as an editor and returns its id.
+  join(token: string): Promise<string>
+  // Owner removes an editor.
+  removeMember(boardId: string, userId: string): Promise<void>
+  // An editor leaves the galaxy.
+  leave(boardId: string): Promise<void>
+  // The galaxy's latest completions, newest first.
+  completions(boardId: string): Promise<Completion[]>
+  // Calls back when someone else completes a task in one of your galaxies.
+  watchCompletions(onCompletion: (completion: Completion) => void): () => void
+  // Who has this galaxy open right now, you included.
+  watchPresence(
+    boardId: string,
+    me: Presence,
+    onChange: (people: Presence[]) => void
+  ): () => void
 }

@@ -88,6 +88,7 @@ export const localSource: BoardDataSource = {
   createTask: done,
   updateTask: done,
   deleteTask: done,
+  completeTask: done,
   createCategory: done,
   updateCategory: done,
   deleteCategory: done,

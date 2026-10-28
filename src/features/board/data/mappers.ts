@@ -1,9 +1,19 @@
 import type {
+  Database,
   Tables,
   TablesInsert,
   TablesUpdate,
 } from '@/lib/supabase/database.types'
-import { Board, Category, Task, TaskRecurrence } from '@/app/types'
+import {
+  Board,
+  Category,
+  Completion,
+  Member,
+  MemberRole,
+  Task,
+  TaskRecurrence,
+} from '@/app/types'
+import type { TaskPosition } from './types'
 import { parseDeadline } from '@/lib/dates'
 
 // The only place that converts between snake_case rows and camelCase domain objects.
@@ -89,11 +99,53 @@ export const categoryToUpdate = (
 
 export const boardFromRow = (
   row: Tables<'workspaces'>,
-  tasks: Task[] = []
+  tasks: Task[] = [],
+  memberCount?: number
 ): Board => ({
   id: row.id,
   name: row.name,
   userId: row.user_id,
   createdAt: row.created_at,
   tasks,
+  memberCount,
+})
+
+// Each user's own layout of a task; overrides the task's starting position.
+export const positionFromRow = (
+  row: Pick<Tables<'task_positions'>, 'task_id' | 'pos_x' | 'pos_y'>
+): TaskPosition => ({ id: row.task_id, pos_x: row.pos_x, pos_y: row.pos_y })
+
+export const positionToUpsert = (
+  position: TaskPosition,
+  userId: string
+): TablesInsert<'task_positions'> => ({
+  task_id: position.id,
+  user_id: userId,
+  pos_x: position.pos_x,
+  pos_y: position.pos_y,
+})
+
+type MemberRow =
+  Database['public']['Functions']['workspace_member_profiles']['Returns'][number]
+
+export const memberFromRow = (row: MemberRow): Member => ({
+  userId: row.user_id,
+  name: row.full_name ?? undefined,
+  avatarUrl: row.avatar_url ?? undefined,
+  role: row.role as MemberRole,
+  joinedAt: row.joined_at,
+})
+
+export const completionFromRow = (
+  row: Tables<'task_completions'>
+): Completion => ({
+  id: row.id,
+  workspaceId: row.workspace_id,
+  taskId: row.task_id,
+  title: row.title,
+  categoryId: row.category_id ?? '',
+  deadline: row.deadline ?? undefined,
+  completedBy: row.completed_by ?? undefined,
+  completedByName: row.completed_by_name ?? undefined,
+  completedAt: row.completed_at,
 })

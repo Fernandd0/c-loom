@@ -13,6 +13,8 @@ import {
 } from './types'
 import { clearGuestData, localSource } from './localSource'
 import { createSupabaseSource } from './supabaseSource'
+import { createReloadGate } from './realtime'
+import { overlayPositions } from '../lib/positions'
 
 const GUEST = 'guest'
 const EMPTY: BoardSnapshot = { boards: [], categories: [] }
@@ -62,6 +64,10 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
   // Mirrors of state for synchronous reads inside async mutations.
   const snapshotRef = useRef(EMPTY)
   const loadedForRef = useRef<string | null>(null)
+  // Remote reloads wait for local writes still saving.
+  const [reloadGate] = useState(createReloadGate)
+  // Position changes waiting to be saved, keyed by task id.
+  const pendingPositions = useRef(new Map<string, TaskPosition>())
 
   const commit = useCallback(
     (next: BoardSnapshot) => {
@@ -81,8 +87,17 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
     const load = () =>
       source
         .load()
-        .then((data) => {
+        .then((loaded) => {
           if (cancelled) return
+          // Positions not saved yet win over what was loaded, so circles don't jump back.
+          const pending = [...pendingPositions.current.values()]
+          const data = {
+            ...loaded,
+            boards: loaded.boards.map((b) => ({
+              ...b,
+              tasks: overlayPositions(b.tasks, pending),
+            })),
+          }
           snapshotRef.current = data
           setSnapshot(data)
         })
@@ -98,12 +113,12 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
         })
 
     load()
-    const unsubscribe = source.subscribe?.(load)
+    const unsubscribe = source.subscribe?.(() => reloadGate.request(load))
     return () => {
       cancelled = true
       unsubscribe?.()
     }
-  }, [isAuthReady, mode, source])
+  }, [isAuthReady, mode, source, reloadGate])
 
   // Applies a change locally, then persists it. On failure, tells the user and reloads the truth.
   const mutate = useCallback(
@@ -111,6 +126,7 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
       const owner = loadedForRef.current
       if (owner !== mode) return
       commit(update(snapshotRef.current))
+      reloadGate.begin()
       try {
         await persist()
       } catch (e) {
@@ -123,9 +139,11 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
         } catch (reloadError) {
           console.error('Error re-syncing boards:', reloadError)
         }
+      } finally {
+        reloadGate.end()
       }
     },
-    [mode, source, commit]
+    [mode, source, commit, reloadGate]
   )
 
   const createBoard = (name: string) => {
@@ -151,6 +169,16 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
     // Returned right away so the caller can select the new board.
     return board.id
   }
+
+  // Leaving a shared galaxy takes it off this user's list, like deleting it does.
+  const leaveBoard = (boardId: string) =>
+    mutate(
+      (s) => ({
+        boards: s.boards.filter((b) => b.id !== boardId),
+        categories: s.categories.filter((c) => c.workspaceId !== boardId),
+      }),
+      async () => source.sharing?.leave(boardId)
+    )
 
   const deleteBoard = (boardId: string) =>
     mutate(
@@ -196,15 +224,27 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
       .flatMap((b) => b.tasks)
       .find((t) => t.id === taskId)
     if (!task) return
-    const updates = completionUpdate(task)
-    return updates ? updateTask(taskId, updates) : deleteTask(taskId)
+    const next = completionUpdate(task)
+    // A completed task's layout is no longer worth saving (and would be rejected).
+    if (!next) pendingPositions.current.delete(taskId)
+    return mutate(
+      (s) =>
+        mapTasks(s, (tasks) =>
+          next
+            ? tasks.map((t) => (t.id === taskId ? { ...t, ...next } : t))
+            : tasks.filter((t) => t.id !== taskId)
+        ),
+      () => source.completeTask(taskId, next)
+    )
   }
 
-  const deleteTask = (taskId: string) =>
-    mutate(
+  const deleteTask = (taskId: string) => {
+    pendingPositions.current.delete(taskId)
+    return mutate(
       (s) => mapTasks(s, (tasks) => tasks.filter((t) => t.id !== taskId)),
       () => source.deleteTask(taskId)
     )
+  }
 
   const createCategory = (category: Category) =>
     mutate(
@@ -237,8 +277,6 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
       () => source.deleteCategory(categoryId)
     )
 
-  // Position changes waiting to be saved, keyed by task id.
-  const pendingPositions = useRef(new Map<string, TaskPosition>())
   const positionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const flushPositions = useCallback(() => {
@@ -346,6 +384,7 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
     dismissError,
     createBoard,
     deleteBoard,
+    leaveBoard,
     renameBoard,
     createTask,
     updateTask,
@@ -361,5 +400,6 @@ export function useBoardData(user: User | null, isAuthReady: boolean) {
         : null,
     importGuestData,
     dismissGuestImport,
+    sharing: isLoaded ? source.sharing : undefined,
   }
 }

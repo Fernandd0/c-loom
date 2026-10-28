@@ -39,7 +39,33 @@ export interface Board {
   name: string
   tasks: Task[]
   createdAt: string
+  // The owner. Others may be members of a shared galaxy.
   userId: string
+  // People with access, the owner included. Unset for guest boards.
+  memberCount?: number
+}
+
+export type MemberRole = 'owner' | 'editor'
+
+export interface Member {
+  userId: string
+  name?: string
+  avatarUrl?: string
+  role: MemberRole
+  joinedAt: string
+}
+
+// A line in a galaxy's history: who completed which task, and when.
+export interface Completion {
+  id: string
+  workspaceId: string
+  taskId: string
+  title: string
+  categoryId: string
+  deadline?: string
+  completedBy?: string
+  completedByName?: string
+  completedAt: string
 }
 
 export interface Profile {
