@@ -24,10 +24,55 @@ const storedTasks = (page: Page) =>
 const stored = async (page: Page, title: string) =>
   (await storedTasks(page)).find((t) => t.title === title)
 
-test.beforeEach(async ({ page }) => {
+const SAMPLE_TITLES = [
+  'Biggest one goes first',
+  'Click me to see what I am',
+  'Double-click me when done',
+  'Add your own: press N',
+]
+
+// Most tests start from an empty galaxy, so the example tasks are cleared first.
+test.beforeEach(async ({ page }, testInfo) => {
   await page.goto('/')
   await page.getByText('Create your first galaxy').click()
   await expect(page.getByRole('button', { name: 'New task' })).toBeVisible()
+  if (testInfo.title.startsWith('a new guest')) return
+  await expect(page.getByText(SAMPLE_TITLES[0])).toBeVisible()
+  await page.evaluate(() => {
+    const boards = JSON.parse(localStorage.getItem('c-loom-boards') || '[]')
+    for (const b of boards) b.tasks = []
+    localStorage.setItem('c-loom-boards', JSON.stringify(boards))
+  })
+  await page.reload()
+  await expect(page.getByText('All clear on My Galaxy.')).toBeVisible()
+})
+
+test('a new guest starts with example tasks they can open and complete', async ({
+  page,
+}) => {
+  for (const title of SAMPLE_TITLES) {
+    await expect(page.getByText(title, { exact: true })).toBeVisible()
+  }
+  // They're real tasks: saved, and the biggest one is due today.
+  expect((await storedTasks(page)).map((t) => t.title).sort()).toEqual(
+    [...SAMPLE_TITLES].sort()
+  )
+  const first = await stored(page, SAMPLE_TITLES[0])
+  expect(await daysFromToday(page, first!.deadline!)).toBe(0)
+
+  await page.getByText('Click me to see what I am', { exact: true }).click()
+  await expect(page.getByRole('dialog')).toContainText('Every circle is a task')
+  await page.keyboard.press('Escape')
+
+  await page.getByText('Double-click me when done', { exact: true }).dblclick()
+  await expect(
+    page.getByText('Double-click me when done', { exact: true })
+  ).toHaveCount(0)
+  await page.reload()
+  await expect(
+    page.getByText('Double-click me when done', { exact: true })
+  ).toHaveCount(0)
+  await expect(page.getByText(SAMPLE_TITLES[0], { exact: true })).toBeVisible()
 })
 
 test('creates a task with only a title, using the preselected category', async ({

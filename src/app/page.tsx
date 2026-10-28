@@ -24,6 +24,7 @@ import {
   OnboardingHints,
 } from '@/features/board/components/OnboardingHints'
 import { GalaxyText } from '@/features/board/components/GalaxyText'
+import { sampleTasks } from '@/features/board/lib/sampleTasks'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -211,8 +212,12 @@ export default function Home() {
           hasLocalBoards={!user && boards.length > 0}
           localTaskCount={localTaskCount}
           onCreateWorkspace={() => {
-            if (!user) setGuestMode(true)
-            addBoard()
+            if (user) return addBoard()
+            setGuestMode(true)
+            const id = addBoard()
+            // A first-time guest learns the board from example tasks, not an empty screen.
+            const personal = allCategories.find((c) => c.name === 'Personal')
+            sampleTasks(id, personal?.id ?? '').forEach(createTask)
           }}
           onContinueLocal={() => setGuestMode(true)}
         />
