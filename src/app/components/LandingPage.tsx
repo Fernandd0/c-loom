@@ -127,20 +127,30 @@ export function LandingPage({
                 className="top-[30px] left-[calc(50%+296px)] rotate-2 whitespace-pre"
                 delay={HINT_DELAY + 0.2}
               >
-                each dot{'\n'}is a world
+                each dot{'\n'}is a task
               </HintNote>
             </div>
           )}
         </div>
 
-        <motion.p
-          variants={itemVariants}
-          className="mb-12 text-xl leading-relaxed font-medium whitespace-pre-line text-(--fg-3) sm:text-2xl"
-        >
-          {user
-            ? 'Your universe is ready.\nStart it with a galaxy.'
-            : 'Every task is a world.\nEvery project, a galaxy.'}
-        </motion.p>
+        {user ? (
+          <motion.p
+            variants={itemVariants}
+            className="mb-12 text-xl leading-relaxed font-medium whitespace-pre-line text-(--fg-3) sm:text-2xl"
+          >
+            {'Your universe is ready.\nStart it with a galaxy.'}
+          </motion.p>
+        ) : (
+          // Say what it is before the metaphor: visitors couldn't tell it was a to-do list.
+          <motion.div variants={itemVariants} className="mb-12">
+            <p className="text-xl leading-relaxed font-semibold text-(--fg) sm:text-2xl">
+              A to-do list that shows what matters.
+            </p>
+            <p className="mt-2 text-base leading-relaxed text-(--fg-3) sm:text-lg">
+              Tasks grow as their due date gets closer.
+            </p>
+          </motion.div>
+        )}
 
         <motion.div
           variants={itemVariants}

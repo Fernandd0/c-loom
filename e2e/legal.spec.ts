@@ -29,7 +29,11 @@ test('the landing links to the privacy policy and terms', async ({ page }) => {
 test('the landing explains itself with hand-drawn notes', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
-  for (const note of ['is a world', 'no account needed', 'on every device']) {
+  // Says what the app is before any metaphor.
+  await expect(
+    page.getByText('A to-do list that shows what matters.')
+  ).toBeVisible()
+  for (const note of ['is a task', 'no account needed', 'on every device']) {
     await expect(page.getByText(note).last()).toBeVisible()
   }
   // They never get in the way of the buttons.
