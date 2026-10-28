@@ -92,6 +92,28 @@ const timeFormat = new Intl.DateTimeFormat('en', {
   minute: '2-digit',
 })
 const weekdayFormat = new Intl.DateTimeFormat('en', { weekday: 'long' })
+
+const TIME_STEP_MINUTES = 15
+
+// Times offered by the picker, every 15 minutes: '00:00', '00:15'… '23:45'.
+// A time saved off that grid (typed "6:40pm" in the title) is added so it still shows.
+export function timeOptions(current?: string) {
+  const options: string[] = []
+  for (let m = 0; m < 24 * 60; m += TIME_STEP_MINUTES) {
+    options.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`)
+  }
+  if (current && /^\d{2}:\d{2}$/.test(current) && !options.includes(current)) {
+    options.push(current)
+    options.sort()
+  }
+  return options
+}
+
+// '18:30' → '6:30 PM'. Independent of time zone: it's a wall-clock time.
+export function formatTimeValue(value: string) {
+  const [hours, minutes] = value.split(':').map(Number)
+  return timeFormat.format(new Date(2000, 0, 1, hours, minutes))
+}
 const shortDateFormat = new Intl.DateTimeFormat('en', {
   weekday: 'short',
   day: 'numeric',

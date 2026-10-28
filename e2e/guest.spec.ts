@@ -5,6 +5,7 @@ import {
   expect,
   test,
   trackConsoleErrors,
+  translatePage,
 } from './helpers'
 
 type StoredTask = {
@@ -115,6 +116,34 @@ test('saves deadlines in local time and they never drift on edit', async ({
   await page.keyboard.press('Escape')
   await expect(due).toBeVisible()
   expect((await stored(page, 'Write report'))!.deadline).toBe(task.deadline)
+})
+
+test('picks a time with one tap or from the list, nothing to type', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'New task' }).click()
+  await page.getByLabel('Task title').fill('Dentist')
+  await page.getByRole('button', { name: /^Due:/ }).click()
+  // No date, no time choices.
+  await expect(page.getByRole('group', { name: 'Time' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Tomorrow', exact: true }).click()
+
+  const time = page.getByRole('group', { name: 'Time' })
+  await time.getByRole('button', { name: '6 PM' }).click()
+  await expect(page.getByText('Due Tomorrow, 6:00 PM')).toBeVisible()
+  await time.getByLabel('Other time').selectOption('07:45')
+  await expect(page.getByText('Due Tomorrow, 7:45 AM')).toBeVisible()
+  await time.getByRole('button', { name: 'No time' }).click()
+  await expect(page.getByText('Due Tomorrow', { exact: true })).toBeVisible()
+  await time.getByRole('button', { name: '9 AM' }).click()
+
+  await page.keyboard.press('Escape')
+  await page.getByLabel('Task title').press('Enter')
+  const saved = (await stored(page, 'Dentist'))!
+  expect(await daysFromToday(page, saved.deadline!)).toBe(1)
+  expect(
+    await page.evaluate((iso) => new Date(iso).getHours(), saved.deadline!)
+  ).toBe(9)
 })
 
 test('only offers Repeat once a due date is set', async ({ page }) => {
@@ -595,4 +624,25 @@ test('the sidebar offers sign-in and opens settings', async ({ page }) => {
   await expect(
     page.getByRole('radiogroup', { name: 'Appearance' })
   ).toBeVisible()
+})
+
+// Regression: with the page translated, a time that cleared "already passed" crashed the app.
+test('keeps working when the browser translates the page', async ({ page }) => {
+  const crashes: string[] = []
+  page.on('pageerror', (e) => crashes.push(e.message))
+  // 3 PM in Bogotá, so 9 AM has already passed today.
+  await page.clock.setFixedTime(new Date('2026-10-28T20:00:00Z'))
+
+  await page.getByRole('button', { name: 'New task' }).click()
+  await page.getByLabel('Task title').fill('Translated')
+  await page.getByRole('button', { name: /^Due:/ }).click()
+  await page.getByRole('button', { name: 'Today', exact: true }).click()
+  await page.getByRole('button', { name: '9 AM' }).click()
+  await expect(page.getByText('already passed')).toBeVisible()
+
+  await translatePage(page)
+  await page.getByLabel('Other time').selectOption('23:30')
+  await expect(page.getByText('already passed')).toHaveCount(0)
+  await expect(page.getByLabel('Task title')).toBeVisible()
+  expect(crashes).toEqual([])
 })

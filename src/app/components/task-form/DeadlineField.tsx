@@ -1,25 +1,33 @@
 'use client'
 
-import { Clock, X } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   addDays,
   buildDeadline,
   formatDeadline,
+  formatTimeValue,
   isOverdue,
   nextWeekday,
   parseDeadline,
+  timeOptions,
   toLocalDateValue,
   weekendStart,
 } from '@/lib/dates'
-import { chipClass } from './ChipGroup'
+import { chipClass, FieldLabel } from './ChipGroup'
 
 export interface DeadlineValue {
   date: string // 'YYYY-MM-DD', local
   time: string // 'HH:mm', local, '' = end of day
 }
 
-const DEFAULT_TIME = '09:00'
+// The usual times one tap away; anything else comes from the list. Nothing to type,
+// and it works the same in every browser (the native time field didn't).
+const QUICK_TIMES = [
+  { label: '9 AM', value: '09:00' },
+  { label: '12 PM', value: '12:00' },
+  { label: '6 PM', value: '18:00' },
+]
 
 interface DeadlineFieldProps {
   value: DeadlineValue
@@ -37,6 +45,8 @@ export function DeadlineField({ value, onChange }: DeadlineFieldProps) {
   ].filter((pick, i, all) => all.findIndex((p) => p.date === pick.date) === i)
   const isQuickPick = quickPicks.some((p) => p.date === value.date)
   const deadline = parseDeadline(buildDeadline(value.date, value.time))
+  const isOtherTime =
+    !!value.time && !QUICK_TIMES.some((t) => t.value === value.time)
 
   return (
     <div className="space-y-2.5">
@@ -74,47 +84,58 @@ export function DeadlineField({ value, onChange }: DeadlineFieldProps) {
         />
       </div>
 
-      {deadline && (
-        <div className="flex flex-wrap items-center gap-2 text-[13px]">
-          <span
-            className={cn(
-              'font-medium',
-              isOverdue(deadline) ? 'text-[#FF3B30]' : 'text-(--fg-2)'
-            )}
-          >
-            Due {formatDeadline(deadline)}
-            {isOverdue(deadline) && ' · already passed'}
-          </span>
-          {value.time ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-(--surface-2) py-0.5 pr-1 pl-2.5">
-              <Clock className="h-3.5 w-3.5 text-(--fg-3)" />
-              <input
-                type="time"
-                aria-label="Time"
-                value={value.time}
-                onChange={(e) => onChange({ ...value, time: e.target.value })}
-                className="bg-transparent text-[13px] font-semibold text-(--fg) outline-none"
-              />
-              <button
-                type="button"
-                aria-label="Remove time"
-                onClick={() => onChange({ ...value, time: '' })}
-                className="rounded-full p-0.5 text-(--fg-3) hover:bg-(--surface-3) hover:text-(--fg)"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          ) : (
+      {value.date && (
+        <div role="group" aria-label="Time" className="pt-1.5">
+          <FieldLabel icon={Clock}>Time</FieldLabel>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onChange({ ...value, time: DEFAULT_TIME })}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-(--accent) hover:bg-[#007AFF]/10"
+              onClick={() => onChange({ ...value, time: '' })}
+              className={chipClass(!value.time)}
             >
-              <Clock className="h-3.5 w-3.5" />
-              Add time
+              No time
             </button>
-          )}
+            {QUICK_TIMES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => onChange({ ...value, time: t.value })}
+                className={chipClass(value.time === t.value)}
+              >
+                {t.label}
+              </button>
+            ))}
+            <select
+              aria-label="Other time"
+              value={isOtherTime ? value.time : ''}
+              onChange={(e) => onChange({ ...value, time: e.target.value })}
+              className={cn(chipClass(isOtherTime), 'cursor-pointer')}
+            >
+              <option value="" disabled>
+                Other…
+              </option>
+              {timeOptions(value.time).map((t) => (
+                <option key={t} value={t}>
+                  {formatTimeValue(t)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      )}
+
+      {deadline && (
+        <p
+          className={cn(
+            'text-[13px] font-medium',
+            isOverdue(deadline) ? 'text-[#FF3B30]' : 'text-(--fg-2)'
+          )}
+        >
+          Due {formatDeadline(deadline)}
+          {/* In its own element: browser translation replaces loose text nodes,
+              and React crashes removing one it no longer finds. */}
+          {isOverdue(deadline) && <span> · already passed</span>}
+        </p>
       )}
     </div>
   )

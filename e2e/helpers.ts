@@ -92,8 +92,7 @@ export async function addTask(
     await page.getByRole('button', { name: /^Due:/ }).click()
     await page.getByRole('button', { name: options.due, exact: true }).click()
     if (options.time) {
-      await page.getByRole('button', { name: 'Add time' }).click()
-      await page.getByLabel('Time', { exact: true }).fill(options.time)
+      await page.getByLabel('Other time').selectOption(options.time)
     }
     if (options.repeat) {
       await page
@@ -142,5 +141,25 @@ export function trackConsoleErrors(page: Page, allow: RegExp[] = []) {
   })
   return errors
 }
+
+// What browser translation (Chrome, Edge) does to the page: every text node is moved
+// inside <font><font>…</font></font>, behind React's back.
+export const translatePage = (page: Page) =>
+  page.evaluate(() => {
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT
+    )
+    const nodes: Text[] = []
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+    for (const node of nodes) {
+      if (!node.textContent?.trim()) continue
+      const outer = document.createElement('font')
+      const inner = document.createElement('font')
+      inner.textContent = node.textContent
+      outer.appendChild(inner)
+      node.replaceWith(outer)
+    }
+  })
 
 export { test, expect }

@@ -5,10 +5,12 @@ import {
   calendarDaysFrom,
   formatAge,
   formatDeadline,
+  formatTimeValue,
   isOverdue,
   nextWeekday,
   parseDeadline,
   splitDeadline,
+  timeOptions,
   toLocalDateValue,
   toLocalTimeValue,
   weekendStart,
@@ -140,5 +142,29 @@ describe('formatAge', () => {
     ['2026-10-21T12:00:00Z', '3 days ago'],
   ])('%s -> %s', (iso, label) => {
     expect(formatAge(iso, now)).toBe(label)
+  })
+})
+
+describe('time picker options', () => {
+  it('offers every 15 minutes of the day', () => {
+    const options = timeOptions()
+    expect(options).toHaveLength(96)
+    expect(options.slice(0, 3)).toEqual(['00:00', '00:15', '00:30'])
+    expect(options.at(-1)).toBe('23:45')
+  })
+
+  it('keeps a saved time that is off the grid, in order', () => {
+    const options = timeOptions('18:40')
+    expect(options).toHaveLength(97)
+    expect(
+      options.slice(options.indexOf('18:30'), options.indexOf('18:30') + 3)
+    ).toEqual(['18:30', '18:40', '18:45'])
+    expect(timeOptions('09:00')).toHaveLength(96)
+  })
+
+  it('labels times on a 12-hour clock', () => {
+    expect(formatTimeValue('00:00')).toBe('12:00 AM')
+    expect(formatTimeValue('09:05')).toBe('9:05 AM')
+    expect(formatTimeValue('18:30')).toBe('6:30 PM')
   })
 })
