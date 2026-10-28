@@ -122,8 +122,13 @@ function CategoryRow({
       <li className="flex items-center gap-2 rounded-xl bg-[#FF3B30]/10 px-3 py-2 text-[13px]">
         <span className="flex-1 text-(--fg-2)">
           Delete <strong>{category.name}</strong>?
-          {taskCount > 0 &&
-            ` ${taskCount} ${taskCount === 1 ? 'task stays' : 'tasks stay'}, without a category.`}
+          {taskCount > 0 && (
+            <span>
+              {' '}
+              {taskCount} {taskCount === 1 ? 'task stays' : 'tasks stay'},
+              without a category.
+            </span>
+          )}
         </span>
         <button
           type="button"
@@ -182,7 +187,11 @@ function CategoryRow({
       />
 
       <span className="shrink-0 text-[12px] text-(--fg-3) tabular-nums">
-        {taskCount > 0 && `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}`}
+        {taskCount > 0 && (
+          <span>
+            {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+          </span>
+        )}
       </span>
       <button
         type="button"

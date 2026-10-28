@@ -126,7 +126,7 @@ function History({
                       {c.title}
                     </span>
                     <span className="shrink-0 text-[12px] text-(--fg-3) tabular-nums">
-                      {shared && `${completedByLabel(c, meId)} · `}
+                      {shared && <span>{completedByLabel(c, meId)} · </span>}
                       {timeFormat.format(new Date(c.completedAt))}
                     </span>
                   </li>
