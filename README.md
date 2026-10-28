@@ -47,6 +47,8 @@ Type what needs doing and press Enter. That's it. Everything else is optional:
 - ⚠️ **Deadline alerts** for anything due in the next 24 hours.
 - 🔁 **Repeating tasks** that move to their next date when you finish them.
 - 🌌 **Galaxies** to keep work, home and side projects apart. Every task is a world inside one.
+- 🤝 **Shared galaxies**: send a link, work on the same tasks together and see changes live. Everyone keeps their own layout of the circles.
+- ✅ **A history of what's done**, with who finished each task and when.
 - 🏷️ **Custom categories** with your own colors and icons.
 - ☁️ **Sync with Google sign-in**, across all your devices, with your board laid out the same way everywhere.
 - ⌨️ **Keyboard first**: create a task without touching the mouse.
@@ -72,10 +74,10 @@ On Windows and Linux, create a task with <kbd>Ctrl</kbd> <kbd>Enter</kbd>.
 ## Questions
 
 **Where is my data?**<br />
-As a guest, only in your browser on this device. Once you sign in, it's stored in your account, and nobody else can see your galaxies, categories or tasks.
+As a guest, only in your browser on this device. Once you sign in, it's stored in your account. Nobody else can see your galaxies unless you share one, and then only the people in that galaxy see it.
 
 **What happens when I finish a task?**<br />
-It disappears. C-Loom is about what's still on your plate, not a history of what you did. Repeating tasks are the exception: they move to their next date.
+It leaves the board: C-Loom shows what's still on your plate. With an account, it's kept in the galaxy's Completed list, so a shared galaxy knows who did what. Repeating tasks move to their next date instead.
 
 **Will my deadlines be right if I travel?**<br />
 Yes. Due dates are saved in a universal time and always shown in your current time zone.

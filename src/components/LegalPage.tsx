@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
-export const LEGAL_UPDATED = 'October 25, 2026'
+export const LEGAL_UPDATED = 'October 28, 2026'
 // Where privacy and terms questions go (X allows direct messages).
 export const CONTACT_URL = 'https://x.com/fernando_script'
 
