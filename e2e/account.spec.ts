@@ -197,13 +197,15 @@ test('saves circle positions once overlapping circles settle', async ({
   await page.goto('/')
   await expect(page.getByText('Stacked B', { exact: true })).toBeVisible()
 
+  // Each member keeps their own layout; the task keeps its starting position.
   const saved = async () =>
     (
       await admin()
-        .from('tasks')
+        .from('task_positions')
         .select('pos_x, pos_y')
+        .eq('user_id', userId)
         .in(
-          'id',
+          'task_id',
           stacked.map((t) => t.id)
         )
     ).data!

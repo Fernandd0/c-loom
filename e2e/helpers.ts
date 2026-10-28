@@ -35,13 +35,19 @@ function sessionCookies(session: object) {
 }
 
 // Creates a confirmed user and signs the browser context in as them. Call cleanup() after.
-export async function signInNewUser(context: BrowserContext, baseURL: string) {
+export async function signInNewUser(
+  context: BrowserContext,
+  baseURL: string,
+  // Shown to other members of a shared galaxy.
+  fullName?: string
+) {
   const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
   const password = `T3st-${crypto.randomUUID()}`
   const { data, error } = await admin().auth.admin.createUser({
     email,
     password,
     email_confirm: true,
+    user_metadata: fullName ? { full_name: fullName } : undefined,
   })
   if (error) throw error
 

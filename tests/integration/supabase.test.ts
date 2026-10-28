@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import { createSupabaseSource } from '@/features/board/data/supabaseSource'
-import type { BoardDataSource } from '@/features/board/data/types'
+import type { BoardDataSource, SharingApi } from '@/features/board/data/types'
 import type { Task } from '@/app/types'
 
 try {
@@ -27,6 +27,7 @@ interface TestUser {
   id: string
   client: SupabaseClient<Database>
   source: BoardDataSource
+  sharing: SharingApi
 }
 
 describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
@@ -51,11 +52,8 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
     })
     const signIn = await client.auth.signInWithPassword({ email, password })
     if (signIn.error) throw signIn.error
-    return {
-      id: data.user.id,
-      client,
-      source: createSupabaseSource(client, data.user.id),
-    }
+    const source = createSupabaseSource(client, data.user.id)
+    return { id: data.user.id, client, source, sharing: source.sharing! }
   }
 
   const newTask = (workspaceId: string, extra: Partial<Task> = {}): Task => ({
@@ -443,6 +441,198 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
         .eq('user_id', stranger.id)
       expect(await hasBoard(stranger, shared)).toBe(false)
       expect(await hasBoard(owner, shared)).toBe(true)
+    })
+  })
+
+  describe('sharing', () => {
+    let owner: TestUser
+    let editor: TestUser
+    let stranger: TestUser
+    let galaxy: string
+    let token: string
+
+    const boardOf = async (user: TestUser) =>
+      (await user.source.load()).boards.find((w) => w.id === galaxy)
+    // Resolves once `check` passes, polling for realtime callbacks.
+    const eventually = async (check: () => boolean, ms = 10_000) => {
+      const start = Date.now()
+      while (!check()) {
+        if (Date.now() - start > ms) throw new Error('Timed out')
+        await new Promise((r) => setTimeout(r, 100))
+      }
+    }
+
+    beforeAll(async () => {
+      owner = await newUser('share-owner')
+      editor = await newUser('share-editor')
+      stranger = await newUser('share-stranger')
+      galaxy = crypto.randomUUID()
+      await owner.source.createBoard({
+        id: galaxy,
+        name: 'House',
+        tasks: [],
+        createdAt: new Date().toISOString(),
+        userId: owner.id,
+      })
+    })
+
+    it('joins with the link, and only the owner manages it', async () => {
+      expect(await owner.sharing.invite(galaxy)).toBeNull()
+      token = await owner.sharing.resetInvite(galaxy)
+      expect(token).toMatch(/^[0-9a-f]{64}$/)
+      // Asking again returns the same link.
+      expect(await owner.sharing.invite(galaxy)).toBe(token)
+
+      await expect(editor.sharing.join('not-a-token')).rejects.toThrow()
+      expect(await editor.sharing.join(token)).toBe(galaxy)
+      expect(await editor.sharing.join(token)).toBe(galaxy) // twice is fine
+      expect((await boardOf(editor))?.memberCount).toBe(2)
+
+      // Editors can't read or change the link.
+      expect(await editor.sharing.invite(galaxy)).toBeNull()
+      await expect(editor.sharing.resetInvite(galaxy)).rejects.toThrow()
+      await editor.sharing.stopSharing(galaxy)
+      expect(await owner.sharing.invite(galaxy)).toBe(token)
+
+      const members = await editor.sharing.members(galaxy)
+      expect(members.map((m) => [m.userId, m.role])).toEqual([
+        [owner.id, 'owner'],
+        [editor.id, 'editor'],
+      ])
+      expect(await stranger.sharing.members(galaxy)).toEqual([])
+    })
+
+    it('resetting or stopping the link locks newcomers out', async () => {
+      const fresh = await owner.sharing.resetInvite(galaxy)
+      expect(fresh).not.toBe(token)
+      await expect(stranger.sharing.join(token)).rejects.toThrow()
+
+      await owner.sharing.stopSharing(galaxy)
+      expect(await owner.sharing.invite(galaxy)).toBeNull()
+      await expect(stranger.sharing.join(fresh)).rejects.toThrow()
+      expect(await boardOf(stranger)).toBeUndefined()
+      // Members already in stay.
+      expect(await boardOf(editor)).toBeDefined()
+    })
+
+    it('keeps a separate layout for each member', async () => {
+      const task = newTask(galaxy, { pos_x: 50, pos_y: 50 })
+      await owner.source.createTask(task)
+      await owner.source.savePositions([{ id: task.id, pos_x: 10, pos_y: 20 }])
+      await editor.source.savePositions([{ id: task.id, pos_x: 80, pos_y: 70 }])
+
+      const at = async (user: TestUser) => {
+        const t = (await boardOf(user))!.tasks.find((t) => t.id === task.id)!
+        return [t.pos_x, t.pos_y]
+      }
+      expect(await at(owner)).toEqual([10, 20])
+      expect(await at(editor)).toEqual([80, 70])
+
+      // A non-member can't place someone else's task.
+      await stranger.source.savePositions([{ id: task.id, pos_x: 1, pos_y: 1 }])
+      const { data } = await admin
+        .from('task_positions')
+        .select('user_id')
+        .eq('task_id', task.id)
+      expect(data!.map((r) => r.user_id).sort()).toEqual(
+        [owner.id, editor.id].sort()
+      )
+    })
+
+    it('records who completed what, in one step', async () => {
+      const once = newTask(galaxy, { title: 'Take out trash' })
+      const weekly = newTask(galaxy, {
+        title: 'Water plants',
+        recurrence: 'weekly',
+        deadline: '2026-10-28T22:59:00.000Z',
+      })
+      await owner.source.createTask(once)
+      await owner.source.createTask(weekly)
+
+      // A stranger completing changes nothing.
+      await stranger.source.completeTask(once.id, null)
+      await editor.source.completeTask(once.id, null)
+      await editor.source.completeTask(once.id, null) // double click
+      await editor.source.completeTask(weekly.id, {
+        deadline: '2026-11-04T23:59:00.000Z',
+        recurrenceAnchor: '2026-10-28T22:59:00.000Z',
+        createdAt: '2026-10-28T12:00:00.000Z',
+      })
+
+      const tasks = (await boardOf(owner))!.tasks
+      expect(tasks.some((t) => t.id === once.id)).toBe(false)
+      const moved = tasks.find((t) => t.id === weekly.id)!
+      expect(new Date(moved.deadline!).toISOString()).toBe(
+        '2026-11-04T23:59:00.000Z'
+      )
+
+      const history = await owner.sharing.completions(galaxy)
+      expect(history.map((c) => c.title).sort()).toEqual([
+        'Take out trash',
+        'Water plants',
+      ])
+      expect(history.every((c) => c.completedBy === editor.id)).toBe(true)
+      expect(await stranger.sharing.completions(galaxy)).toEqual([])
+
+      // History can't be written or edited directly.
+      const forged = await editor.client.from('task_completions').insert({
+        workspace_id: galaxy,
+        task_id: crypto.randomUUID(),
+        title: 'fake',
+      })
+      expect(forged.error).not.toBeNull()
+    })
+
+    it('pushes changes and completions to other members live', async () => {
+      let reloads = 0
+      const completed: string[] = []
+      const stopBoard = owner.source.subscribe!(() => reloads++)
+      const stopCompletions = owner.sharing.watchCompletions((c) =>
+        completed.push(c.title)
+      )
+      await owner.source.load()
+
+      // Channels take a moment to join, so keep making changes until one gets through.
+      let task = newTask(galaxy, { title: 'Fix the door' })
+      for (let i = 0; reloads === 0 && i < 10; i++) {
+        task = newTask(galaxy, { title: 'Fix the door' })
+        await editor.source.createTask(task)
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+      expect(reloads).toBeGreaterThan(0)
+
+      await editor.source.completeTask(task.id, null)
+      await eventually(() => completed.includes('Fix the door'))
+
+      stopBoard()
+      stopCompletions()
+    })
+
+    it('lets only members see who is online', async () => {
+      const seen: string[][] = []
+      const me = { userId: owner.id, name: 'Owner' }
+      const stop = owner.sharing.watchPresence(galaxy, me, (people) =>
+        seen.push(people.map((p) => p.userId))
+      )
+      await eventually(() => seen.some((ids) => ids.includes(owner.id)))
+      stop()
+
+      const strangerSeen: string[][] = []
+      const stopStranger = stranger.sharing.watchPresence(
+        galaxy,
+        { userId: stranger.id },
+        (people) => strangerSeen.push(people.map((p) => p.userId))
+      )
+      await new Promise((r) => setTimeout(r, 3000))
+      stopStranger()
+      expect(strangerSeen.flat()).not.toContain(owner.id)
+      expect(strangerSeen.flat()).not.toContain(stranger.id)
+    })
+
+    it('lets an editor leave', async () => {
+      await editor.sharing.leave(galaxy)
+      expect(await boardOf(editor)).toBeUndefined()
+      await expect(editor.sharing.leave(galaxy)).rejects.toThrow()
     })
   })
 
