@@ -12,7 +12,10 @@ import {
 test.skip(!hasSupabase, 'Supabase credentials not available')
 
 const galaxyMenu = async (page: Page, name: string) => {
-  await page.getByRole('button', { name: 'Open sidebar' }).click()
+  // The drawer may still be open from an earlier step.
+  if (!(await page.getByRole('navigation', { name: 'Galaxies' }).isVisible())) {
+    await page.getByRole('button', { name: 'Open sidebar' }).click()
+  }
   await page.getByRole('button', { name: `${name} options` }).click()
 }
 
@@ -47,9 +50,15 @@ test('a galaxy is shared by link and stays in sync live', async ({
     ).toBeVisible()
     await a.getByRole('button', { name: 'Share…' }).click()
     const dialog = a.getByRole('dialog', { name: 'Share “Family”' })
-    await dialog
-      .getByRole('button', { name: 'Create and copy invite link' })
-      .click()
+    const shareSwitch = dialog.getByRole('switch', {
+      name: 'Share with a link',
+    })
+    await expect(shareSwitch).toHaveAttribute('aria-checked', 'false')
+    await expect(
+      dialog.getByText('Only you can see this galaxy.')
+    ).toBeVisible()
+    await shareSwitch.click()
+    await expect(shareSwitch).toHaveAttribute('aria-checked', 'true')
     const link = await dialog
       .getByRole('textbox', { name: 'Invite link' })
       .inputValue()
@@ -103,6 +112,23 @@ test('a galaxy is shared by link and stays in sync live', async ({
     await expect(b.getByRole('button', { name: 'Family options' })).toHaveCount(
       0
     )
+
+    // Turning the switch off stops new people from joining.
+    await galaxyMenu(a, 'Family')
+    await a.getByRole('button', { name: 'Share…' }).click()
+    const again = a.getByRole('dialog', { name: 'Share “Family”' })
+    const toggle = again.getByRole('switch', { name: 'Share with a link' })
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await expect(
+      again.getByRole('textbox', { name: 'Invite link' })
+    ).toHaveCount(0)
+    const { data: invites } = await admin()
+      .from('workspace_invites')
+      .select('token')
+      .eq('created_by', owner.userId)
+    expect(invites).toEqual([])
   } finally {
     await ownerContext.close()
     await friendContext.close()

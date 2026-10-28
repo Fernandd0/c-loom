@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Link2, LogOut, RefreshCw, X } from 'lucide-react'
+import { Check, Copy, Link2, LogOut, RefreshCw } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { GlassCard } from '@/app/components/GlassCard'
+import { SettingsGroup, SettingsSwitch } from '@/app/components/SettingsRow'
 import type { Board, Member } from '@/app/types'
 import type { SharingApi } from '@/features/board/data/types'
 import { inviteUrl } from '../lib/pendingInvite'
@@ -72,7 +73,8 @@ function ShareContent({
 }) {
   const isOwner = board.userId === meId
   const [members, setMembers] = useState<Member[] | null>(null)
-  const [token, setToken] = useState<string | null>(null)
+  // undefined while loading, null when the galaxy has no link.
+  const [token, setToken] = useState<string | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -140,17 +142,36 @@ function ShareContent({
         </DialogTitle>
         <DialogDescription className="mt-1 text-[13px] text-(--fg-3)">
           {isOwner
-            ? 'Anyone with the link can join and edit tasks. Only you can delete the galaxy or remove people.'
+            ? 'Only you can delete the galaxy or remove people.'
             : 'Everyone here can add, edit and complete tasks.'}
         </DialogDescription>
       </div>
 
       {isOwner && (
         <section aria-label="Invite link" className="space-y-2">
+          {/* Hidden until we know whether there is a link, so it doesn't flip on load. */}
+          {token !== undefined && (
+            <SettingsGroup>
+              <SettingsSwitch
+                icon={<Link2 />}
+                tint="#5856D6"
+                label="Share with a link"
+                checked={!!token}
+                onChange={(on) => {
+                  if (busy) return
+                  if (on) createLink()
+                  else
+                    run(async () => {
+                      await sharing.stopSharing(board.id)
+                      setToken(null)
+                    })
+                }}
+              />
+            </SettingsGroup>
+          )}
           {token ? (
             <>
               <div className="flex items-center gap-2 rounded-xl bg-(--surface-2) p-1.5 pl-3">
-                <Link2 className="h-4 w-4 shrink-0 text-(--fg-3)" />
                 <input
                   readOnly
                   value={inviteUrl(token)}
@@ -163,10 +184,13 @@ function ShareContent({
                   className={`${button} bg-(--ink) text-white hover:bg-(--ink-hover)`}
                 >
                   {copied ? <Check /> : <Copy />}
-                  {copied ? 'Copied' : 'Copy'}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-[12px] text-(--fg-3)">
+                  Anyone with it can join and edit.
+                </p>
                 <button
                   onClick={createLink}
                   disabled={busy}
@@ -176,31 +200,16 @@ function ShareContent({
                   <RefreshCw />
                   Reset link
                 </button>
-                <button
-                  onClick={() =>
-                    run(async () => {
-                      await sharing.stopSharing(board.id)
-                      setToken(null)
-                    })
-                  }
-                  disabled={busy}
-                  className={quiet}
-                  title="Nobody new can join; people already here stay"
-                >
-                  <X />
-                  Turn off link
-                </button>
               </div>
             </>
           ) : (
-            <button
-              onClick={createLink}
-              disabled={busy}
-              className={`${button} h-10 w-full bg-(--ink) text-white hover:bg-(--ink-hover)`}
-            >
-              <Link2 />
-              Create and copy invite link
-            </button>
+            token === null && (
+              <p className="px-1 text-[12px] text-(--fg-3)">
+                {(members?.length ?? 0) > 1
+                  ? 'Nobody new can join. People already here stay until you remove them.'
+                  : 'Only you can see this galaxy.'}
+              </p>
+            )
           )}
         </section>
       )}
