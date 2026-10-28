@@ -25,6 +25,12 @@ import {
 } from '@/features/board/components/OnboardingHints'
 import { GalaxyText } from '@/features/board/components/GalaxyText'
 import { sampleTasks } from '@/features/board/lib/sampleTasks'
+import { ShareDialog } from '@/features/sharing/components/ShareDialog'
+import { CompletedDialog } from '@/features/sharing/components/CompletedDialog'
+import { PresenceAvatars } from '@/features/sharing/components/PresenceAvatars'
+import { CompletionNotice } from '@/features/sharing/components/CompletionNotice'
+import { takePendingInvite } from '@/features/sharing/lib/pendingInvite'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -67,6 +73,7 @@ export default function Home() {
     dismissError,
     createBoard,
     deleteBoard,
+    leaveBoard,
     renameBoard,
     createTask,
     updateTask,
@@ -79,7 +86,29 @@ export default function Home() {
     guestImport,
     importGuestData,
     dismissGuestImport,
+    sharing,
   } = useBoardData(user, isAuthReady)
+
+  // An invite opened while signed out resumes once the visitor is back with a session.
+  const router = useRouter()
+  useEffect(() => {
+    if (!user) return
+    const token = takePendingInvite()
+    if (token) router.push(`/join/${token}`)
+  }, [user, router])
+
+  const [shareBoardId, setShareBoardId] = useState<string | null>(null)
+  const [historyBoardId, setHistoryBoardId] = useState<string | null>(null)
+  const me = useMemo(
+    () =>
+      user && {
+        userId: user.id,
+        name: (user.user_metadata?.full_name || user.user_metadata?.name) as
+          string | undefined,
+        avatarUrl: user.user_metadata?.avatar_url as string | undefined,
+      },
+    [user]
+  )
 
   const [currentBoardId, setCurrentBoardId] = useStickyState<string>(
     '',
@@ -235,10 +264,46 @@ export default function Home() {
         onSelectBoard={setCurrentBoardId}
         onAddBoard={addBoard}
         onDeleteBoard={deleteBoard}
+        onShareBoard={sharing && setShareBoardId}
+        onShowCompleted={sharing && setHistoryBoardId}
         onRenameBoard={renameBoard}
         onNewTask={() => setAddTaskOpen(true)}
       />
       <ErrorToast message={error} onDismiss={dismissError} />
+      {sharing && me && (
+        <>
+          <ShareDialog
+            board={boards.find((b) => b.id === shareBoardId)}
+            meId={me.userId}
+            sharing={sharing}
+            onLeave={leaveBoard}
+            onClose={() => setShareBoardId(null)}
+          />
+          <CompletedDialog
+            board={boards.find((b) => b.id === historyBoardId)}
+            categories={allCategories}
+            meId={me.userId}
+            sharing={sharing}
+            onClose={() => setHistoryBoardId(null)}
+          />
+          <CompletionNotice
+            sharing={sharing}
+            boardName={(id) =>
+              id === currentBoardKey
+                ? undefined
+                : boards.find((b) => b.id === id)?.name
+            }
+          />
+          {currentBoard && (currentBoard.memberCount ?? 1) > 1 && (
+            <PresenceAvatars
+              key={currentBoard.id}
+              boardId={currentBoard.id}
+              me={me}
+              sharing={sharing}
+            />
+          )}
+        </>
+      )}
       {guestImport && !error && (
         <GuestImportBanner
           taskCount={guestImport.taskCount}

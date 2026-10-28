@@ -75,6 +75,9 @@ interface SidebarProps {
   // Returns the new galaxy's id so it can be named right away.
   onAddBoard: () => string
   onDeleteBoard?: (boardId: string) => void
+  // Shared galaxies (account only): opens the share dialog, where editors can leave.
+  onShareBoard?: (boardId: string) => void
+  onShowCompleted?: (boardId: string) => void
   onRenameBoard?: (boardId: string, name: string) => void
   onNewTask: () => void
 }
@@ -120,6 +123,8 @@ export function Sidebar({
   onSelectBoard,
   onAddBoard,
   onDeleteBoard,
+  onShareBoard,
+  onShowCompleted,
   onRenameBoard,
   onNewTask,
 }: SidebarProps) {
@@ -336,8 +341,20 @@ export function Sidebar({
               onSelect={() => selectBoard(board.id)}
               onStartRename={() => setEditingId(board.id)}
               onRenameDone={(name) => finishRename(board.id, name)}
+              // Guest boards have no owner to check against.
               onDelete={
-                onDeleteBoard ? () => setDeleteConfirmId(board.id) : undefined
+                onDeleteBoard && (!user || board.userId === user.id)
+                  ? () => setDeleteConfirmId(board.id)
+                  : undefined
+              }
+              onLeave={
+                onShareBoard && user && board.userId !== user.id
+                  ? () => onShareBoard(board.id)
+                  : undefined
+              }
+              onShare={onShareBoard && (() => onShareBoard(board.id))}
+              onShowCompleted={
+                onShowCompleted && (() => onShowCompleted(board.id))
               }
             />
           ))}

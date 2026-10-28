@@ -6,8 +6,10 @@ import {
   Circle,
   Clock,
   Flag,
+  History,
   MousePointerClick,
   Sparkles,
+  Users,
 } from 'lucide-react'
 import { sphereStyle } from '../TaskCircle'
 import { SettingsCaption, SettingsGroup, SettingsItem } from '../SettingsRow'
@@ -92,6 +94,24 @@ export function GuideTab() {
           />
           <SettingsItem title="Due today" trailing={<Signal kind="today" />} />
           <SettingsItem title="Overdue" trailing={<Signal kind="overdue" />} />
+        </SettingsGroup>
+      </div>
+
+      <div>
+        <SettingsCaption>Together</SettingsCaption>
+        <SettingsGroup>
+          <SettingsItem
+            icon={<Users />}
+            tint="#5856D6"
+            title="Share a galaxy"
+            note="Open its ⋯ menu in the sidebar and choose Share. Everyone in it sees changes as they happen."
+          />
+          <SettingsItem
+            icon={<History />}
+            tint="#8E8E93"
+            title="See what's done"
+            note="Completed, in the same menu, lists who finished what and when."
+          />
         </SettingsGroup>
       </div>
 

@@ -1,7 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { MoreHorizontal, Orbit, Pencil, Trash2 } from 'lucide-react'
+import {
+  History,
+  LogOut,
+  MoreHorizontal,
+  Orbit,
+  Pencil,
+  Trash2,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import {
   Popover,
   PopoverContent,
@@ -20,7 +29,13 @@ interface GalaxyRowProps {
   onStartRename: () => void
   // null when the rename was cancelled.
   onRenameDone: (name: string | null) => void
+  // Owner only.
   onDelete?: () => void
+  // Shared galaxies: members other than the owner leave instead of deleting.
+  onLeave?: () => void
+  // With an account only.
+  onShare?: () => void
+  onShowCompleted?: () => void
 }
 
 // A row in the sidebar's grouped list, with a hairline inset past the icon like iOS Settings.
@@ -35,8 +50,17 @@ export function GalaxyRow({
   onStartRename,
   onRenameDone,
   onDelete,
+  onLeave,
+  onShare,
+  onShowCompleted,
 }: GalaxyRowProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const shared = (board.memberCount ?? 1) > 1
+  const GalaxyIcon = shared ? Users : Orbit
+  const choose = (action: () => void) => () => {
+    setMenuOpen(false)
+    action()
+  }
   const summary = summarizeBoard(board.tasks)
   const pressing = summaryLabel(summary)
 
@@ -59,11 +83,18 @@ export function GalaxyRow({
           selected ? 'bg-(--hover) font-semibold' : 'font-medium'
         )}
       >
-        <Orbit
+        <GalaxyIcon
           size={15}
+          aria-hidden
           className={cn('shrink-0', selected ? 'text-(--fg)' : 'text-(--fg-3)')}
         />
         <span className="min-w-0 flex-1 truncate">{board.name}</span>
+        {shared && (
+          <span className="sr-only">
+            , shared with {board.memberCount! - 1}{' '}
+            {board.memberCount === 2 ? 'person' : 'people'}
+          </span>
+        )}
         {pressing && (
           <span
             aria-hidden
@@ -97,25 +128,27 @@ export function GalaxyRow({
           // Keep focus on the rename field instead of jumping back to this button.
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
-          <MenuItem
-            icon={<Pencil />}
-            onClick={() => {
-              setMenuOpen(false)
-              onStartRename()
-            }}
-          >
+          <MenuItem icon={<Pencil />} onClick={choose(onStartRename)}>
             Rename
           </MenuItem>
+          {onShare && (
+            <MenuItem icon={<UserPlus />} onClick={choose(onShare)}>
+              Share…
+            </MenuItem>
+          )}
+          {onShowCompleted && (
+            <MenuItem icon={<History />} onClick={choose(onShowCompleted)}>
+              Completed
+            </MenuItem>
+          )}
           {onDelete && (
-            <MenuItem
-              icon={<Trash2 />}
-              destructive
-              onClick={() => {
-                setMenuOpen(false)
-                onDelete()
-              }}
-            >
+            <MenuItem icon={<Trash2 />} destructive onClick={choose(onDelete)}>
               Delete
+            </MenuItem>
+          )}
+          {onLeave && (
+            <MenuItem icon={<LogOut />} destructive onClick={choose(onLeave)}>
+              Leave
             </MenuItem>
           )}
         </PopoverContent>
