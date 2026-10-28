@@ -265,6 +265,187 @@ describe.skipIf(!hasCredentials)('Supabase (live project)', () => {
     })
   })
 
+  describe('shared workspaces', () => {
+    let owner: TestUser
+    let editor: TestUser
+    let stranger: TestUser
+    let shared: string
+
+    const share = async (workspaceId: string, user: TestUser) => {
+      // Joining by link comes later; until then the service role adds the member.
+      const { error } = await admin
+        .from('workspace_members')
+        .insert({ workspace_id: workspaceId, user_id: user.id, role: 'editor' })
+      if (error) throw error
+    }
+    const hasBoard = async (user: TestUser, id: string) =>
+      (await user.source.load()).boards.some((w) => w.id === id)
+
+    beforeAll(async () => {
+      owner = await newUser('owner')
+      editor = await newUser('editor')
+      stranger = await newUser('stranger')
+      shared = crypto.randomUUID()
+      await owner.source.createBoard({
+        id: shared,
+        name: 'Trip',
+        tasks: [],
+        createdAt: new Date().toISOString(),
+        userId: owner.id,
+      })
+      await share(shared, editor)
+    })
+
+    it('makes the creator of every workspace its owner member', async () => {
+      const { data } = await owner.client
+        .from('workspace_members')
+        .select('workspace_id, user_id, role')
+        .eq('user_id', owner.id)
+      const { boards } = await owner.source.load()
+      expect(data).toHaveLength(boards.length)
+      expect(data!.every((m) => m.role === 'owner')).toBe(true)
+    })
+
+    it('lets an editor work on tasks and categories, and see the members', async () => {
+      const task = newTask(shared, { title: 'Book flights' })
+      await owner.source.createTask(task)
+
+      const view = await editor.source.load()
+      const board = view.boards.find((w) => w.id === shared)
+      expect(board?.tasks.map((t) => t.title)).toEqual(['Book flights'])
+      expect(view.categories.some((c) => c.workspaceId === shared)).toBe(true)
+
+      await editor.source.updateTask(task.id, { title: 'Book cheap flights' })
+      const category = {
+        id: crypto.randomUUID(),
+        name: 'Packing',
+        color: '#FF9500',
+        workspaceId: shared,
+      }
+      await editor.source.createCategory(category)
+      const mine = newTask(shared, { categoryId: category.id })
+      await editor.source.createTask(mine)
+      await editor.source.renameBoard(shared, 'Summer trip')
+
+      const ownerView = await owner.source.load()
+      const ownerBoard = ownerView.boards.find((w) => w.id === shared)!
+      expect(ownerBoard.name).toBe('Summer trip')
+      expect(ownerBoard.tasks.map((t) => t.title).sort()).toEqual([
+        'Book cheap flights',
+        'integration test',
+      ])
+
+      await editor.source.deleteTask(mine.id)
+      expect(
+        (await owner.source.load()).boards
+          .find((w) => w.id === shared)!
+          .tasks.some((t) => t.id === mine.id)
+      ).toBe(false)
+
+      const { data: members } = await editor.client
+        .from('workspace_members')
+        .select('user_id, role')
+        .eq('workspace_id', shared)
+      expect(members).toHaveLength(2)
+    })
+
+    it('keeps owner-only actions away from editors', async () => {
+      // Deleting the workspace matches nothing for an editor.
+      await editor.source.deleteBoard(shared)
+      expect(await hasBoard(owner, shared)).toBe(true)
+
+      // The owner can't be changed: only the name is updatable.
+      const takeover = await editor.client
+        .from('workspaces')
+        .update({ user_id: editor.id })
+        .eq('id', shared)
+      expect(takeover.error).not.toBeNull()
+
+      // Nobody adds members directly, and the owner row can't be removed.
+      const invite = await editor.client
+        .from('workspace_members')
+        .insert({ workspace_id: shared, user_id: stranger.id, role: 'editor' })
+      expect(invite.error).not.toBeNull()
+      await editor.client
+        .from('workspace_members')
+        .delete()
+        .eq('workspace_id', shared)
+        .eq('user_id', owner.id)
+      const promote = await editor.client
+        .from('workspace_members')
+        .update({ role: 'owner' })
+        .eq('workspace_id', shared)
+        .eq('user_id', editor.id)
+        .select('role')
+      expect(promote.data ?? []).toEqual([])
+      const { data: roles } = await admin
+        .from('workspace_members')
+        .select('user_id, role')
+        .eq('workspace_id', shared)
+      expect(
+        Object.fromEntries(roles!.map((m) => [m.user_id, m.role]))
+      ).toEqual({ [owner.id]: 'owner', [editor.id]: 'editor' })
+    })
+
+    it('shows nothing to non-members', async () => {
+      expect(await hasBoard(stranger, shared)).toBe(false)
+      const { data } = await stranger.client
+        .from('workspace_members')
+        .select('user_id')
+        .eq('workspace_id', shared)
+      expect(data ?? []).toEqual([])
+      await expect(
+        stranger.source.createTask(newTask(shared))
+      ).rejects.toThrow()
+    })
+
+    it('never imports guest tasks into a galaxy shared with you', async () => {
+      const guestBoardId = crypto.randomUUID()
+      await editor.source.importGuest!({
+        boards: [
+          {
+            id: guestBoardId,
+            name: 'Summer trip',
+            createdAt: new Date().toISOString(),
+            userId: 'local',
+            tasks: [newTask(guestBoardId, { title: 'Guest task' })],
+          },
+        ],
+        categories: [],
+      })
+      const { boards } = await editor.source.load()
+      const trips = boards.filter((w) => w.name === 'Summer trip')
+      expect(trips).toHaveLength(2)
+      expect(
+        trips
+          .find((w) => w.id === shared)!
+          .tasks.some((t) => t.title === 'Guest task')
+      ).toBe(false)
+      expect(
+        trips.find((w) => w.userId === editor.id)!.tasks.map((t) => t.title)
+      ).toEqual(['Guest task'])
+    })
+
+    it('lets an editor leave and the owner remove editors', async () => {
+      await editor.client
+        .from('workspace_members')
+        .delete()
+        .eq('workspace_id', shared)
+        .eq('user_id', editor.id)
+      expect(await hasBoard(editor, shared)).toBe(false)
+
+      await share(shared, stranger)
+      expect(await hasBoard(stranger, shared)).toBe(true)
+      await owner.client
+        .from('workspace_members')
+        .delete()
+        .eq('workspace_id', shared)
+        .eq('user_id', stranger.id)
+      expect(await hasBoard(stranger, shared)).toBe(false)
+      expect(await hasBoard(owner, shared)).toBe(true)
+    })
+  })
+
   describe('guest import', () => {
     it('merges into the same-named workspace, maps categories and is safe to retry', async () => {
       const user = await newUser('import')

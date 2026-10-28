@@ -143,8 +143,12 @@ export function createSupabaseSource(
     },
 
     async importGuest({ boards, categories }) {
+      // Only the user's own workspaces: guest tasks never go into a galaxy shared with them.
       const existing = rows(
-        await supabase.from('workspaces').select('id, name')
+        await supabase
+          .from('workspaces')
+          .select('id, name')
+          .eq('user_id', userId)
       )
 
       // Only boards with tasks are worth bringing over.
