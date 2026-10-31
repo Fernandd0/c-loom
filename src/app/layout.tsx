@@ -16,10 +16,22 @@ const caveat = Caveat({
   variable: '--font-caveat',
 })
 
+const description =
+  'A to-do list that shows what matters: every task is a circle that grows as its date gets closer.'
+
 export const metadata: Metadata = {
-  title: 'C-LOOM',
-  description:
-    'A visual task board where every task is a circle that grows the longer it waits.',
+  metadataBase: new URL('https://c-loom.vercel.app'),
+  title: { default: 'c-loom', template: '%s · c-loom' },
+  applicationName: 'c-loom',
+  description,
+  openGraph: {
+    siteName: 'c-loom',
+    title: 'c-loom',
+    description,
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: 'c-loom', description },
+  appleWebApp: { title: 'c-loom' },
   ...(env.googleSiteVerification && {
     verification: { google: env.googleSiteVerification },
   }),
