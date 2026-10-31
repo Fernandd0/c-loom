@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { CONTACT_URL, LegalPage } from '@/components/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service · C-LOOM',
-  description: 'The terms for using C-LOOM.',
+  title: 'Terms of Service',
+  description: 'The terms for using c-loom.',
 }
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPage title="Terms of Service">
       <section>
         <p>
-          By using C-LOOM you agree to these terms. If you do not agree, please
+          By using c-loom you agree to these terms. If you do not agree, please
           do not use the app.
         </p>
       </section>
@@ -20,7 +20,7 @@ export default function TermsPage() {
       <section>
         <h2>The service</h2>
         <p>
-          C-LOOM is a visual task board, currently offered free of charge as
+          c-loom is a visual task board, currently offered free of charge as
           early access. Features may change, and the service may be paused or
           discontinued. We will try to give notice before removing synced data.
         </p>
@@ -39,7 +39,7 @@ export default function TermsPage() {
       <section>
         <h2>Acceptable use</h2>
         <ul>
-          <li>Do not use C-LOOM for anything unlawful.</li>
+          <li>Do not use c-loom for anything unlawful.</li>
           <li>
             Do not try to access other people&apos;s data or disrupt the
             service.
@@ -54,7 +54,7 @@ export default function TermsPage() {
       <section>
         <h2>No warranty</h2>
         <p>
-          C-LOOM is provided &quot;as is&quot;, without warranties of any kind.
+          c-loom is provided &quot;as is&quot;, without warranties of any kind.
           Keep your own copy of anything important. To the extent permitted by
           law, we are not liable for lost data or for any indirect damages
           arising from using the app.

@@ -10,7 +10,7 @@ test('the landing links to the privacy policy and terms', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Privacy Policy', level: 1 })
   ).toBeVisible()
-  await expect(page).toHaveTitle('Privacy Policy · C-LOOM')
+  await expect(page).toHaveTitle('Privacy Policy · c-loom')
 
   await page
     .getByRole('navigation', { name: 'Legal' })
@@ -20,7 +20,7 @@ test('the landing links to the privacy policy and terms', async ({ page }) => {
     page.getByRole('heading', { name: 'Terms of Service', level: 1 })
   ).toBeVisible()
 
-  await page.getByRole('link', { name: 'C-LOOM' }).click()
+  await page.getByRole('link', { name: 'c-loom' }).click()
   await expect(
     page.getByRole('button', { name: 'Create your first galaxy' })
   ).toBeVisible()

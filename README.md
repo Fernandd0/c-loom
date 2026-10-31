@@ -1,17 +1,17 @@
 <div align="center">
 
-# C-Loom
+# c-loom
 
 **The to-do list that grows on you.**
 
 Every task is a circle. The longer you leave it, the bigger it gets,<br />
 until it's impossible to ignore.
 
-[**Open C-Loom →**](https://c-loom.vercel.app)
+[**Open c-loom →**](https://c-loom.vercel.app)
 
 <br />
 
-<img src=".github/assets/board.png" alt="A C-Loom board: colored circles of different sizes, each one a task" width="860" />
+<img src=".github/assets/board.png" alt="A c-loom board: colored circles of different sizes, each one a task" width="860" />
 
 </div>
 
@@ -19,7 +19,7 @@ until it's impossible to ignore.
 
 ## Why circles?
 
-Most to-do lists treat a task you added five minutes ago the same as one you've been avoiding for a week. C-Loom doesn't.
+Most to-do lists treat a task you added five minutes ago the same as one you've been avoiding for a week. c-loom doesn't.
 
 - **Tasks grow while they wait.** A new task starts small and swells a little every hour. The things you keep putting off end up taking over your screen.
 - **Important things start big.** Pick a priority and the circle starts larger, so it stands out from day one.
@@ -57,7 +57,7 @@ Type what needs doing and press Enter. That's it. Everything else is optional:
 
 Open [c-loom.vercel.app](https://c-loom.vercel.app) and start right away. As a guest, your board is saved in your browser.
 
-When you want your tasks on every device, **sign in with Google**. C-Loom offers to bring over everything you made as a guest, and merges it into your galaxy without duplicates.
+When you want your tasks on every device, **sign in with Google**. c-loom offers to bring over everything you made as a guest, and merges it into your galaxy without duplicates.
 
 ## Keyboard shortcuts
 
@@ -77,7 +77,7 @@ On Windows and Linux, create a task with <kbd>Ctrl</kbd> <kbd>Enter</kbd>.
 As a guest, only in your browser on this device. Once you sign in, it's stored in your account. Nobody else can see your galaxies unless you share one, and then only the people in that galaxy see it.
 
 **What happens when I finish a task?**<br />
-It leaves the board: C-Loom shows what's still on your plate. With an account, it's kept in the galaxy's Completed list, so a shared galaxy knows who did what. Repeating tasks move to their next date instead.
+It leaves the board: c-loom shows what's still on your plate. With an account, it's kept in the galaxy's Completed list, so a shared galaxy knows who did what. Repeating tasks move to their next date instead.
 
 **Will my deadlines be right if I travel?**<br />
 Yes. Due dates are saved in a universal time and always shown in your current time zone.

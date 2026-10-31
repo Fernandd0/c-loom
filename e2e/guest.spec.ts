@@ -437,7 +437,7 @@ test('? and ⌘G work with the sidebar closed', async ({ page }) => {
   await expect(dialog).toHaveCount(0)
   await page.keyboard.press('Meta+g')
   await expect(
-    dialog.getByRole('heading', { name: 'How C-LOOM works' })
+    dialog.getByRole('heading', { name: 'How c-loom works' })
   ).toBeVisible()
 })
 

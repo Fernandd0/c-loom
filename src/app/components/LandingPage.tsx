@@ -105,26 +105,26 @@ export function LandingPage({
         className="flex max-w-xl flex-col items-center text-center"
       >
         {/* Your universe: the name assembles from planets, like an empty board does. */}
-        <h1 className="sr-only">{user ? `Welcome, ${firstName}` : 'C-LOOM'}</h1>
+        <h1 className="sr-only">{user ? `Welcome, ${firstName}` : 'c-loom'}</h1>
         <div
           aria-hidden
           className="relative mb-4 w-full text-(--fg) sm:w-[min(60rem,100vw)]"
         >
           <GalaxyText
-            lines={user ? ['Welcome,', `${firstName}.`] : ['C-LOOM']}
+            lines={user ? ['Welcome,', `${firstName}.`] : ['c-loom']}
             maxFontSize={user ? 72 : 120}
           />
           {!user && (
             <div className={`${HINTS} hidden lg:block`}>
               <HintArrow
-                className="absolute top-[54px] left-[calc(50%+236px)]"
+                className="absolute top-[54px] left-[calc(50%+212px)]"
                 width={58}
                 height={40}
                 d="M52 6 C 34 2, 14 12, 6 34"
                 delay={HINT_DELAY}
               />
               <HintNote
-                className="top-[30px] left-[calc(50%+296px)] rotate-2 whitespace-pre"
+                className="top-[30px] left-[calc(50%+272px)] rotate-2 whitespace-pre"
                 delay={HINT_DELAY + 0.2}
               >
                 each dot{'\n'}is a task

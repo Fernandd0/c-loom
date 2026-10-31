@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { CONTACT_URL, LegalPage } from '@/components/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy · C-LOOM',
-  description: 'What C-LOOM stores, why, and how to have it removed.',
+  title: 'Privacy Policy',
+  description: 'What c-loom stores, why, and how to have it removed.',
 }
 
 export default function PrivacyPage() {
@@ -11,7 +11,7 @@ export default function PrivacyPage() {
     <LegalPage title="Privacy Policy">
       <section>
         <p>
-          C-LOOM is a visual task board. This page explains what it stores about
+          c-loom is a visual task board. This page explains what it stores about
           you and why. In short: only what it needs to show you your tasks, and
           nothing is sold or shared for advertising.
         </p>
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <section>
         <h2>Without an account</h2>
         <p>
-          If you use C-LOOM without signing in, your galaxies (workspaces),
+          If you use c-loom without signing in, your galaxies (workspaces),
           categories and tasks are saved only in your browser&apos;s local
           storage on that device. They are never sent to our servers, and
           clearing your browser data removes them.
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We only ask Google for your basic profile and email. C-LOOM does not
+          We only ask Google for your basic profile and email. c-loom does not
           access your Gmail, Drive, Calendar, contacts or any other Google data.
         </p>
       </section>
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
           <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer">
             contact us
           </a>{' '}
-          and we will remove it. You can also revoke C-LOOM&apos;s access at any
+          and we will remove it. You can also revoke c-loom&apos;s access at any
           time from your{' '}
           <a
             href="https://myaccount.google.com/connections"

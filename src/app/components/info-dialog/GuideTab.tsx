@@ -26,7 +26,7 @@ export function GuideTab() {
     <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight text-(--fg)">
-          How C-LOOM works
+          How c-loom works
         </h2>
         <p className="mt-1 text-[14px] text-(--fg-3)">
           The longer a task waits, the bigger it gets.

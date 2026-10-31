@@ -21,7 +21,7 @@ export function LegalPage({
           className="mb-8 inline-flex items-center gap-0.5 text-[14px] font-medium text-(--accent) hover:underline"
         >
           <ChevronLeft size={16} />
-          C-LOOM
+          c-loom
         </Link>
         <h1 className="text-4xl leading-tight font-medium text-(--fg) sm:text-5xl">
           {title}

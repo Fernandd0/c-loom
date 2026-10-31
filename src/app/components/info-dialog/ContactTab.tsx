@@ -8,7 +8,7 @@ export function ContactTab() {
     <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5 duration-300">
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight text-(--fg)">
-          C-LOOM
+          c-loom
         </h2>
         <p className="mt-1 text-[14px] text-(--fg-3)">
           A task board made of circles. Made by Fernando.
