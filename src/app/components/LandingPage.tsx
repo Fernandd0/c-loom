@@ -7,7 +7,10 @@ import { signInWithGoogle } from '@/lib/auth'
 import { Loader } from '@/components/ui/loader'
 import { User } from '@supabase/supabase-js'
 import { LegalFooter } from '@/components/LegalPage'
-import { earlyAccessLabel } from '@/features/auth/lib/earlyAccess'
+import {
+  EARLY_ACCESS_SPOTS,
+  earlyAccessLabel,
+} from '@/features/auth/lib/earlyAccess'
 import { GalaxyText } from '@/features/board/components/GalaxyText'
 import {
   HintArrow,
@@ -280,28 +283,26 @@ export function LandingPage({
           </p>
         )}
 
-        {!user && (
+        {/* The offer only shows while there are spots left. It is the last block, so
+            arriving after the count loads moves nothing above it. */}
+        {!user && spotsLabel && (
           <motion.div
-            variants={itemVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
             className="mt-16 flex flex-col items-center gap-3"
           >
-            {/* Fixed height: the count arrives after paint and must not push the text. */}
-            <div className="flex h-4 items-center gap-2">
-              {spotsLabel && (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 motion-safe:animate-ping"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-                  </span>
-                  <span className="font-geist-mono text-xs font-medium tracking-wider text-(--fg-2) uppercase">
-                    {spotsLabel}
-                  </span>
-                </>
-              )}
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 motion-safe:animate-ping"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+              </span>
+              <span className="font-geist-mono text-xs font-medium tracking-wider text-(--fg-2) uppercase">
+                {spotsLabel}
+              </span>
             </div>
-            <p className="max-w-[260px] text-center text-[13px] text-(--fg-2)">
-              Early access includes free unlimited synchronization. <br /> No
-              account needed for local use.
+            <p className="max-w-[300px] text-center text-[13px] text-(--fg-2)">
+              {`The first ${EARLY_ACCESS_SPOTS} accounts get sync, shared galaxies and everything new, free forever.`}
             </p>
           </motion.div>
         )}
