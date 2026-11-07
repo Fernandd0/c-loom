@@ -58,3 +58,9 @@ CONTRIBUTING.md
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Impeccable design skill (local review tool, not versioned)
+.claude/skills/impeccable/
+.impeccable/
+PRODUCT.md
+DESIGN.md
