@@ -72,8 +72,9 @@ export function GalaxyText({
       const widest = Math.max(...rows.map((r) => probe.measureText(r).width))
       size = Math.max(28, size * Math.min(1, (width * 0.92) / widest))
       const step = Math.max(4, Math.round(size / 16))
-      const lineHeight = size * 1.05
-      const height = Math.ceil(lineHeight * rows.length + step * 2)
+      // Whole cells per line, so every baseline can sit on a grid line (see `shift`).
+      const lineHeight = Math.round((size * 1.05) / step) * step
+      const height = Math.ceil(lineHeight * rows.length + step * 3)
       box.style.height = `${height}px`
       radius = step * 0.38
 
@@ -84,18 +85,37 @@ export function GalaxyText({
       o.font = `700 ${size}px ${fontFamily}`
       o.textAlign = 'center'
       o.textBaseline = 'middle'
+      // Moves the text so the baseline falls on a cell edge: round letters dip a little
+      // below it, and that sliver must not fill a whole row of dots.
+      const toBaseline = o.measureText('l').actualBoundingBoxDescent
+      const baseline = step + lineHeight / 2 + toBaseline
+      const shift = (step - (baseline % step)) % step
       rows.forEach((row, i) =>
-        o.fillText(row, width / 2, step + lineHeight * (i + 0.5))
+        o.fillText(row, width / 2, step + shift + lineHeight * (i + 0.5))
       )
       const alpha = o.getImageData(0, 0, width, height).data
 
       // The spiral spans the page, not just the text.
       const maxR = Math.hypot(window.innerWidth, window.innerHeight) / 2
+      // A dot needs half its cell inside the letter. Testing only the center pixel left
+      // stray dots under round letters (their overshoot), so "c-loom" read as "ç-lqqm".
+      const covered = (left: number, top: number) => {
+        let sum = 0
+        let count = 0
+        for (let py = top; py < Math.min(top + step, height); py++) {
+          for (let px = left; px < Math.min(left + step, width); px++) {
+            sum += alpha[(py * width + px) * 4 + 3]
+            count++
+          }
+        }
+        return sum / count >= 128
+      }
       dots = []
-      for (let y = step / 2; y < height; y += step) {
-        for (let x = step / 2; x < width; x += step) {
-          if (alpha[(Math.floor(y) * width + Math.floor(x)) * 4 + 3] < 128)
-            continue
+      for (let top = 0; top < height; top += step) {
+        for (let left = 0; left < width; left += step) {
+          if (!covered(left, top)) continue
+          const x = left + step / 2
+          const y = top + step / 2
           // Two-armed spiral, flattened like a galaxy seen at an angle.
           const r = Math.random() ** 0.6 * maxR
           const arm = Math.random() < 0.5 ? 0 : Math.PI
