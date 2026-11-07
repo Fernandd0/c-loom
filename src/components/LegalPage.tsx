@@ -33,21 +33,25 @@ export function LegalPage({
           {children}
         </div>
       </article>
-      <LegalFooter className="mt-8" />
+      <LegalFooter className="mt-5" />
     </div>
   )
 }
+
+const LEGAL_LINK =
+  'rounded-md px-3 py-3.5 hover:text-(--fg) focus-visible:outline-2 focus-visible:outline-(--fg)'
 
 export function LegalFooter({ className }: { className?: string }) {
   return (
     <nav
       aria-label="Legal"
-      className={`flex justify-center gap-4 text-[12px] text-(--fg-3) ${className ?? ''}`}
+      className={`flex justify-center gap-1 text-[12px] text-(--fg-2) ${className ?? ''}`}
     >
-      <Link href="/privacy" className="hover:text-(--fg)">
+      {/* Padding gives each link a 44px touch target without moving the text. */}
+      <Link href="/privacy" className={LEGAL_LINK}>
         Privacy
       </Link>
-      <Link href="/terms" className="hover:text-(--fg)">
+      <Link href="/terms" className={LEGAL_LINK}>
         Terms
       </Link>
     </nav>

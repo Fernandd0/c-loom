@@ -23,7 +23,8 @@
   --glass-strong: rgb(255 255 255 / 0.95);
   --accent: #007aff;
   --dot-soft: #cbd5e1;
-  --hint: #a1a1aa;
+  /* Hand-drawn notes are body-size text: keep them at AA (4.5:1) on the page. */
+  --hint: #71717a;
 }
 
 /* Dark: the light theme's calm, in solid neutral grays. */
@@ -49,7 +50,7 @@
   --glass-strong: rgb(22 22 24 / 0.95);
   --accent: #0a84ff;
   --dot-soft: rgb(255 255 255 / 0.32);
-  --hint: #6e6e73;
+  --hint: #8e8e93;
 }
 
 /* Galaxy: deep space, glowing planets and a dusty-lavender accent. */
@@ -69,8 +70,9 @@
   --line-strong: rgb(255 255 255 / 0.16);
   --hairline: rgb(255 255 255 / 0.08);
   --hover: rgb(255 255 255 / 0.06);
-  --ink: #8a7bb8;
-  --ink-hover: #9a8cc6;
+  /* Deep enough for white button labels at AA (5:1). */
+  --ink: #7465a8;
+  --ink-hover: #7a6bad;
   --glass: rgb(20 23 42 / 0.72);
   --glass-strong: rgb(14 16 30 / 0.94);
   --accent: #8ab4ff;
