@@ -27,6 +27,17 @@ export default function TermsPage() {
       </section>
 
       <section>
+        <h2>The first 100 accounts</h2>
+        <p>
+          The first 100 accounts created on c-loom get every feature free of
+          charge, for as long as c-loom runs. That includes sync, shared
+          galaxies and anything we add later. If we ever introduce paid plans,
+          these accounts will not be charged for them. This applies to the
+          account, not to the person, and ends if the account is deleted.
+        </p>
+      </section>
+
+      <section>
         <h2>Your account and content</h2>
         <p>
           You are responsible for your account and for what you write in your
